@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 
 	"github.com/bbkane/go-color"
 	"github.com/bbkane/warg"
@@ -137,28 +139,14 @@ type fileInfo struct {
 }
 
 func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
-	return nil, nil
-}
-
-func link(pf flag.PassedFlags) error {
-	linkDir := pf["--link-dir"].(string)
-	srcDir := pf["--src-dir"].(string)
-	// ignore := []string{}
-	// if ignoreF, exists := pf["--ignore"]; exists {
-	// 	ignore = ignoreF.([]string)
-	// }
-
-	// help.CondionallyEnableColor(pf, os.Stdout)
-	help.ConditionallyEnableColor(pf, os.Stdout)
-
 	linkDir, err := filepath.Abs(linkDir)
 	if err != nil {
-		return fmt.Errorf("couldn't get abs path for linkDir: %w", err)
+		return nil, fmt.Errorf("couldn't get abs path for linkDir: %w", err)
 	}
 
 	srcDir, err = filepath.Abs(srcDir)
 	if err != nil {
-		return fmt.Errorf("couldn't get abs path for srcDir: %w", err)
+		return nil, fmt.Errorf("couldn't get abs path for srcDir: %w", err)
 	}
 
 	linksToCreate := []linkToCreate{}
@@ -305,47 +293,96 @@ func link(pf flag.PassedFlags) error {
 		FollowSymbolicLinks: false,
 	})
 	if err != nil {
-		return fmt.Errorf("walking error: %w", err)
+		return nil, fmt.Errorf("walking error: %w", err)
 	}
 
-	if len(linksToCreate) > 0 {
+	return &fileInfo{
+		linksToCreate: linksToCreate,
+		existingLinks: existingLinks,
+		pathErrs:      pathErrs,
+		pathsErrs:     pathsErrs,
+	}, nil
+
+}
+
+func link(pf flag.PassedFlags) error {
+	linkDir := pf["--link-dir"].(string)
+	srcDir := pf["--src-dir"].(string)
+	// ignore := []string{}
+	// if ignoreF, exists := pf["--ignore"]; exists {
+	// 	ignore = ignoreF.([]string)
+	// }
+
+	// help.CondionallyEnableColor(pf, os.Stdout)
+	help.ConditionallyEnableColor(pf, os.Stdout)
+
+	fi, err := buildFileInfo(srcDir, linkDir)
+	if err != nil {
+		return err
+	}
+
+	// TODO: buffer this :)
+	if len(fi.linksToCreate) > 0 {
 		fmt.Print(
 			color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
 		)
-		for _, e := range linksToCreate {
+		for _, e := range fi.linksToCreate {
 			fmt.Printf("%s\n", e)
 		}
 		fmt.Println()
 	}
 
-	if len(existingLinks) > 0 {
+	if len(fi.existingLinks) > 0 {
 		fmt.Print(
 			color.Add(color.Underline+color.Bold, "Existing Links (probably previously created):\n\n"),
 		)
-		for _, e := range existingLinks {
+		for _, e := range fi.existingLinks {
 			fmt.Printf("%s\n", e)
 		}
 		fmt.Println()
 	}
 
-	if len(pathErrs) > 0 {
+	if len(fi.pathErrs) > 0 {
 		fmt.Print(
 			color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
 		)
-		for _, e := range pathErrs {
+		for _, e := range fi.pathErrs {
 			fmt.Printf("%s\n", e)
 		}
 		fmt.Println()
 	}
 
-	if len(pathsErrs) > 0 {
+	if len(fi.pathsErrs) > 0 {
 		fmt.Print(
 			color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
 		)
-		for _, e := range pathsErrs {
+		for _, e := range fi.pathsErrs {
 			fmt.Printf("%s\n", e)
 		}
 		fmt.Println()
+	}
+
+	// confirmation prompt
+	{
+		fmt.Print("Type 'yes' to continue: ")
+		reader := bufio.NewReader(os.Stdin)
+		confirmation, err := reader.ReadString('\n')
+		if err != nil {
+			err = fmt.Errorf("confirmation ReadString error: %w", err)
+			return err
+		}
+		confirmation = strings.TrimSpace(confirmation)
+		if confirmation != "yes" {
+			err := fmt.Errorf("confirmation not yes: %v", confirmation)
+			return err
+		}
+	}
+
+	for _, e := range fi.linksToCreate {
+		err := os.Symlink(e.src, e.link)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
