@@ -80,6 +80,7 @@ With the caveat that I don't really need to skip children of srcPath, I think I 
 I don't know that I need to report this :)
 
 - linkPath alrady existign dir
+- ignored file
 
 ## linktoCreate: srcPath linkPath
 
@@ -94,3 +95,42 @@ I don't know that I need to report this :)
 ## pathsErr: srcPath linkPath err
 
 - unrecognized symlink
+
+---
+
+```
+Path Messages:
+
+- path:
+  msg:
+- path:
+  msg:
+
+Pre-Existing Links (probably from previous runs):
+
+- src: ...
+  link: ...
+- src: ...
+  link: ...
+
+Links to Create:
+
+- src: ...
+  link: ...
+- src: ...
+  link: ...
+
+
+Path Errors:
+
+- path:
+  err:
+- path:
+  err:
+
+Link Mismatch Errors:
+
+- src: ...
+  link: ...
+  err: ...
+```

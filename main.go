@@ -8,9 +8,11 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
+	"github.com/bbkane/go-color"
 	"github.com/bbkane/warg"
 	"github.com/bbkane/warg/command"
 	"github.com/bbkane/warg/flag"
+	"github.com/bbkane/warg/help"
 	"github.com/bbkane/warg/section"
 	"github.com/bbkane/warg/value"
 	"github.com/karrick/godirwalk"
@@ -68,9 +70,30 @@ type linkToCreate struct {
 	src  string
 	link string
 }
+
+func (t linkToCreate) String() string {
+	return fmt.Sprintf(
+		"- %s: %s\n  %s: %s",
+		color.Add(color.Bold, "src"),
+		t.src,
+		color.Add(color.Bold, "link"),
+		t.link,
+	)
+}
+
 type existingLink struct {
 	src  string
 	link string
+}
+
+func (t existingLink) String() string {
+	return fmt.Sprintf(
+		"- %s: %s\n  %s: %s",
+		color.Add(color.Bold, "src"),
+		t.src,
+		color.Add(color.Bold, "link"),
+		t.link,
+	)
 }
 
 type pathErr struct {
@@ -78,10 +101,43 @@ type pathErr struct {
 	err  error
 }
 
+func (t pathErr) String() string {
+	return fmt.Sprintf(
+		"- %s: %s\n  %s: %s",
+		color.Add(color.Bold, "path"),
+		t.path,
+		color.Add(color.Bold+color.ForegroundRed, "err"),
+		t.err,
+	)
+}
+
 type pathsErr struct {
 	src  string
 	link string
 	err  error
+}
+
+func (t pathsErr) String() string {
+	return fmt.Sprintf(
+		"- %s: %s\n  %s: %s\n  %s: %s",
+		color.Add(color.Bold, "src"),
+		t.src,
+		color.Add(color.Bold, "link"),
+		t.link,
+		color.Add(color.Bold+color.ForegroundRed, "err"),
+		t.err,
+	)
+}
+
+type fileInfo struct {
+	linksToCreate []linkToCreate
+	existingLinks []existingLink
+	pathErrs      []pathErr
+	pathsErrs     []pathsErr
+}
+
+func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
+	return nil, nil
 }
 
 func link(pf flag.PassedFlags) error {
@@ -91,6 +147,9 @@ func link(pf flag.PassedFlags) error {
 	// if ignoreF, exists := pf["--ignore"]; exists {
 	// 	ignore = ignoreF.([]string)
 	// }
+
+	// help.CondionallyEnableColor(pf, os.Stdout)
+	help.ConditionallyEnableColor(pf, os.Stdout)
 
 	linkDir, err := filepath.Abs(linkDir)
 	if err != nil {
@@ -208,7 +267,7 @@ func link(pf flag.PassedFlags) error {
 					pse := pathsErr{
 						src:  srcPath,
 						link: linkPath,
-						err:  fmt.Errorf("unexpected symlink: target: %s", linkPathSymlinkTarget),
+						err:  fmt.Errorf("link is already a symlink to: %s", linkPathSymlinkTarget),
 					}
 					pathsErrs = append(pathsErrs, pse)
 					return godirwalk.SkipThis
@@ -250,31 +309,43 @@ func link(pf flag.PassedFlags) error {
 	}
 
 	if len(linksToCreate) > 0 {
-		fmt.Println("Links to create")
+		fmt.Print(
+			color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
+		)
 		for _, e := range linksToCreate {
-			fmt.Printf("  %#v\n", e)
+			fmt.Printf("%s\n", e)
 		}
+		fmt.Println()
 	}
 
 	if len(existingLinks) > 0 {
-		fmt.Println("Existing Links (probably previously created)")
+		fmt.Print(
+			color.Add(color.Underline+color.Bold, "Existing Links (probably previously created):\n\n"),
+		)
 		for _, e := range existingLinks {
-			fmt.Printf("  %#v\n", e)
+			fmt.Printf("%s\n", e)
 		}
+		fmt.Println()
 	}
 
 	if len(pathErrs) > 0 {
-		fmt.Println("Path errs")
+		fmt.Print(
+			color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
+		)
 		for _, e := range pathErrs {
-			fmt.Printf("  %#v\n", e)
+			fmt.Printf("%s\n", e)
 		}
+		fmt.Println()
 	}
 
 	if len(pathsErrs) > 0 {
-		fmt.Println("Paths errs")
+		fmt.Print(
+			color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
+		)
 		for _, e := range pathsErrs {
-			fmt.Printf("  %#v\n", e)
+			fmt.Printf("%s\n", e)
 		}
+		fmt.Println()
 	}
 
 	return nil
@@ -322,6 +393,13 @@ func main() {
 					"glob pattern to ignore. Does not expand ~.",
 					value.StringSlice,
 				),
+			),
+			section.WithFlag(
+				"--color",
+				"Control color (including for --help)",
+				value.StringEnum("true", "false", "auto"),
+				flag.Alias("-c"),
+				flag.Default("auto"),
 			),
 		),
 	)
