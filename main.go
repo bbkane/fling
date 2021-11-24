@@ -131,14 +131,25 @@ func (t pathsErr) String() string {
 	)
 }
 
+type ignoredPath string
+
+func (t ignoredPath) String() string {
+	return fmt.Sprintf(
+		"- %s: %s",
+		color.Add(color.Bold, "path"),
+		string(t),
+	)
+}
+
 type fileInfo struct {
 	linksToCreate []linkToCreate
 	existingLinks []existingLink
 	pathErrs      []pathErr
 	pathsErrs     []pathsErr
+	ignoredPaths  []ignoredPath
 }
 
-func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
+func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fileInfo, error) {
 	linkDir, err := filepath.Abs(linkDir)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get abs path for linkDir: %w", err)
@@ -153,6 +164,7 @@ func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
 	existingLinks := []existingLink{}
 	pathErrs := []pathErr{}
 	pathsErrs := []pathsErr{}
+	ignoredPaths := []ignoredPath{}
 
 	err = godirwalk.Walk(srcDir, &godirwalk.Options{
 
@@ -174,7 +186,17 @@ func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
 			}
 			linkPath := filepath.Join(linkDir, relPath)
 
-			// fmt.Printf("srcPath: %s\nlinkPath: %s\n\n", srcPath, linkPath)
+			for _, pattern := range ignorePatterns {
+				match, err := filepath.Match(pattern, srcDe.Name())
+				if err != nil {
+					err = fmt.Errorf("invalid --ignore pattern: %s: %w", pattern, err)
+					return err // Exit immediately on a bad pattern.
+				}
+				if match {
+					ignoredPaths = append(ignoredPaths, ignoredPath(srcPath))
+					return godirwalk.SkipThis
+				}
+			}
 
 			if srcDe.IsSymlink() {
 				// fmt.Printf("srcDe isSymlink: %s", srcPath)
@@ -301,6 +323,7 @@ func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
 		existingLinks: existingLinks,
 		pathErrs:      pathErrs,
 		pathsErrs:     pathsErrs,
+		ignoredPaths:  ignoredPaths,
 	}, nil
 
 }
@@ -308,9 +331,14 @@ func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
 func unlink(pf flag.PassedFlags) error {
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
+	ignorePatterns := []string{}
+	if ignoreF, exists := pf["--ignore"]; exists {
+		ignorePatterns = ignoreF.([]string)
+	}
 
 	help.ConditionallyEnableColor(pf, os.Stdout)
-	fi, err := buildFileInfo(srcDir, linkDir)
+
+	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns)
 	if err != nil {
 		return err
 	}
@@ -318,6 +346,17 @@ func unlink(pf flag.PassedFlags) error {
 	// Print fileInfo
 	{
 		f := bufio.NewWriter(os.Stdout)
+
+		if len(fi.ignoredPaths) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline, "Ignored paths:\n\n"),
+			)
+			for _, e := range fi.ignoredPaths {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
 
 		if len(fi.linksToCreate) > 0 {
 			fmt.Fprint(
@@ -412,15 +451,15 @@ func unlink(pf flag.PassedFlags) error {
 func link(pf flag.PassedFlags) error {
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
-	// ignore := []string{}
-	// if ignoreF, exists := pf["--ignore"]; exists {
-	// 	ignore = ignoreF.([]string)
-	// }
+	ignorePatterns := []string{}
+	if ignoreF, exists := pf["--ignore"]; exists {
+		ignorePatterns = ignoreF.([]string)
+	}
 
 	// help.CondionallyEnableColor(pf, os.Stdout)
 	help.ConditionallyEnableColor(pf, os.Stdout)
 
-	fi, err := buildFileInfo(srcDir, linkDir)
+	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns)
 	if err != nil {
 		return err
 	}
@@ -428,6 +467,17 @@ func link(pf flag.PassedFlags) error {
 	// Print fileInfo
 	{
 		f := bufio.NewWriter(os.Stdout)
+
+		if len(fi.ignoredPaths) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline, "Ignored paths:\n\n"),
+			)
+			for _, e := range fi.ignoredPaths {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
 
 		if len(fi.linksToCreate) > 0 {
 			fmt.Fprint(
@@ -527,6 +577,7 @@ func main() {
 		"--ignore": flag.New(
 			"Patterns to ignore. Only applied to the last element of the path (the name or base)",
 			value.StringSlice,
+			flag.Alias("-i"),
 		),
 		"--link-dir": flag.New(
 			"Symlinks will be created in this directory pointing to files/directories in --to_dir",
