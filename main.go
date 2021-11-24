@@ -305,6 +305,17 @@ func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
 
 }
 
+// func unlink(pf flag.PassedFlags) error {
+// 	linkDir := pf["--link-dir"].(string)
+// 	srcDir := pf["--src-dir"].(string)
+
+// 	help.ConditionallyEnableColor(pf, os.Stdout)
+// 	fi, err := buildFileInfo(srcDir, linkDir)
+// 	if err != nil {
+// 		return err
+// 	}
+// }
+
 func link(pf flag.PassedFlags) error {
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
@@ -321,47 +332,73 @@ func link(pf flag.PassedFlags) error {
 		return err
 	}
 
-	// TODO: buffer this :)
-	if len(fi.linksToCreate) > 0 {
-		fmt.Print(
-			color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
-		)
-		for _, e := range fi.linksToCreate {
-			fmt.Printf("%s\n", e)
-		}
-		fmt.Println()
-	}
+	// Print fileInfo
+	{
+		f := bufio.NewWriter(os.Stdout)
+		defer f.Flush()
 
-	if len(fi.existingLinks) > 0 {
-		fmt.Print(
-			color.Add(color.Underline+color.Bold, "Existing Links (probably previously created):\n\n"),
-		)
-		for _, e := range fi.existingLinks {
-			fmt.Printf("%s\n", e)
+		if len(fi.linksToCreate) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
+			)
+			for _, e := range fi.linksToCreate {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
 		}
-		fmt.Println()
-	}
 
-	if len(fi.pathErrs) > 0 {
-		fmt.Print(
-			color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
-		)
-		for _, e := range fi.pathErrs {
-			fmt.Printf("%s\n", e)
+		if len(fi.existingLinks) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Underline+color.Bold, "Pre-existing Correct Links:\n\n"),
+			)
+			for _, e := range fi.existingLinks {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
 		}
-		fmt.Println()
-	}
 
-	if len(fi.pathsErrs) > 0 {
-		fmt.Print(
-			color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
-		)
-		for _, e := range fi.pathsErrs {
-			fmt.Printf("%s\n", e)
+		if len(fi.pathErrs) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
+			)
+			for _, e := range fi.pathErrs {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
 		}
-		fmt.Println()
-	}
 
+		if len(fi.pathsErrs) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
+			)
+			for _, e := range fi.pathsErrs {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.linksToCreate) == 0 {
+			fmt.Fprint(
+				f,
+				color.Add(
+					color.Bold+color.BrightForegroundGreen,
+					"Nothing to do!\n",
+				),
+			)
+			return nil // exit
+		}
+		fmt.Fprint(
+			f,
+			color.Add(
+				color.Bold,
+				"Create links?\n",
+			),
+		)
+	}
 	// confirmation prompt
 	{
 		fmt.Print("Type 'yes' to continue: ")
@@ -383,6 +420,15 @@ func link(pf flag.PassedFlags) error {
 		if err != nil {
 			return err
 		}
+	}
+	if len(fi.linksToCreate) == 0 {
+		fmt.Print(
+			color.Add(
+				color.Bold+color.BrightForegroundGreen,
+				"Done!\n",
+			),
+		)
+		return nil // exit
 	}
 
 	return nil
@@ -427,7 +473,7 @@ func main() {
 				),
 				command.WithFlag(
 					"--ignore",
-					"glob pattern to ignore. Does not expand ~.",
+					"Patterns to ignore. Only applied to the last element of the path (the name or base)",
 					value.StringSlice,
 				),
 			),
