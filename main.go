@@ -42,7 +42,8 @@ func printVersion(_ flag.PassedFlags) error {
 }
 
 // checkMode for types of files we're not prepared to deal with :)
-// It does not check for symlinks
+// It does not check for symlinks.
+// Also see https://pkg.go.dev/io/fs#FileMode
 func checkMode(mode os.FileMode) error {
 	if mode&fs.ModeExclusive != 0 {
 		return fmt.Errorf("ModeExclusive set")
