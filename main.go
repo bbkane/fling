@@ -305,28 +305,11 @@ func buildFileInfo(srcDir string, linkDir string) (*fileInfo, error) {
 
 }
 
-// func unlink(pf flag.PassedFlags) error {
-// 	linkDir := pf["--link-dir"].(string)
-// 	srcDir := pf["--src-dir"].(string)
-
-// 	help.ConditionallyEnableColor(pf, os.Stdout)
-// 	fi, err := buildFileInfo(srcDir, linkDir)
-// 	if err != nil {
-// 		return err
-// 	}
-// }
-
-func link(pf flag.PassedFlags) error {
+func unlink(pf flag.PassedFlags) error {
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
-	// ignore := []string{}
-	// if ignoreF, exists := pf["--ignore"]; exists {
-	// 	ignore = ignoreF.([]string)
-	// }
 
-	// help.CondionallyEnableColor(pf, os.Stdout)
 	help.ConditionallyEnableColor(pf, os.Stdout)
-
 	fi, err := buildFileInfo(srcDir, linkDir)
 	if err != nil {
 		return err
@@ -335,12 +318,11 @@ func link(pf flag.PassedFlags) error {
 	// Print fileInfo
 	{
 		f := bufio.NewWriter(os.Stdout)
-		defer f.Flush()
 
 		if len(fi.linksToCreate) > 0 {
 			fmt.Fprint(
 				f,
-				color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
+				color.Add(color.Bold+color.Underline, "Uncreated links:\n\n"),
 			)
 			for _, e := range fi.linksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
@@ -351,7 +333,7 @@ func link(pf flag.PassedFlags) error {
 		if len(fi.existingLinks) > 0 {
 			fmt.Fprint(
 				f,
-				color.Add(color.Underline+color.Bold, "Pre-existing Correct Links:\n\n"),
+				color.Add(color.Underline+color.Bold, "Links to delete:\n\n"),
 			)
 			for _, e := range fi.existingLinks {
 				fmt.Fprintf(f, "%s\n", e)
@@ -380,25 +362,134 @@ func link(pf flag.PassedFlags) error {
 			}
 			fmt.Fprintln(f)
 		}
-
-		if len(fi.linksToCreate) == 0 {
-			fmt.Fprint(
-				f,
-				color.Add(
-					color.Bold+color.BrightForegroundGreen,
-					"Nothing to do!\n",
-				),
-			)
-			return nil // exit
-		}
-		fmt.Fprint(
-			f,
+		f.Flush()
+	}
+	if len(fi.existingLinks) == 0 {
+		fmt.Print(
 			color.Add(
-				color.Bold,
-				"Create links?\n",
+				color.Bold+color.BrightForegroundGreen,
+				"Nothing to do!\n",
 			),
 		)
+		return nil // exit
 	}
+	fmt.Print(
+		color.Add(
+			color.Bold,
+			"Delete links?\n",
+		),
+	)
+	// confirmation prompt
+	{
+		fmt.Print("Type 'yes' to continue: ")
+		reader := bufio.NewReader(os.Stdin)
+		confirmation, err := reader.ReadString('\n')
+		if err != nil {
+			err = fmt.Errorf("confirmation ReadString error: %w", err)
+			return err
+		}
+		confirmation = strings.TrimSpace(confirmation)
+		if confirmation != "yes" {
+			err := fmt.Errorf("confirmation not yes: %v", confirmation)
+			return err
+		}
+	}
+	for _, e := range fi.existingLinks {
+		err := os.Remove(e.link)
+		if err != nil {
+			return err
+		}
+	}
+	fmt.Print(
+		color.Add(
+			color.Bold+color.BrightForegroundGreen,
+			"Done!\n",
+		),
+	)
+	return nil
+}
+
+func link(pf flag.PassedFlags) error {
+	linkDir := pf["--link-dir"].(string)
+	srcDir := pf["--src-dir"].(string)
+	// ignore := []string{}
+	// if ignoreF, exists := pf["--ignore"]; exists {
+	// 	ignore = ignoreF.([]string)
+	// }
+
+	// help.CondionallyEnableColor(pf, os.Stdout)
+	help.ConditionallyEnableColor(pf, os.Stdout)
+
+	fi, err := buildFileInfo(srcDir, linkDir)
+	if err != nil {
+		return err
+	}
+
+	// Print fileInfo
+	{
+		f := bufio.NewWriter(os.Stdout)
+
+		if len(fi.linksToCreate) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
+			)
+			for _, e := range fi.linksToCreate {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.existingLinks) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Underline+color.Bold, "Pre-existing correct Links:\n\n"),
+			)
+			for _, e := range fi.existingLinks {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.pathErrs) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
+			)
+			for _, e := range fi.pathErrs {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.pathsErrs) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
+			)
+			for _, e := range fi.pathsErrs {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+		f.Flush()
+	}
+
+	if len(fi.linksToCreate) == 0 {
+		fmt.Print(
+			color.Add(
+				color.Bold+color.BrightForegroundGreen,
+				"Nothing to do!\n",
+			),
+		)
+		return nil // exit
+	}
+	fmt.Print(
+		color.Add(
+			color.Bold,
+			"Create links?\n",
+		),
+	)
 	// confirmation prompt
 	{
 		fmt.Print("Type 'yes' to continue: ")
@@ -421,35 +512,37 @@ func link(pf flag.PassedFlags) error {
 			return err
 		}
 	}
-	if len(fi.linksToCreate) == 0 {
-		fmt.Print(
-			color.Add(
-				color.Bold+color.BrightForegroundGreen,
-				"Done!\n",
-			),
-		)
-		return nil // exit
-	}
+	fmt.Print(
+		color.Add(
+			color.Bold+color.BrightForegroundGreen,
+			"Done!\n",
+		),
+	)
 
 	return nil
 }
 
 func main() {
+	linkUnlinkFlags := flag.FlagMap{
+		"--ignore": flag.New(
+			"Patterns to ignore. Only applied to the last element of the path (the name or base)",
+			value.StringSlice,
+		),
+		"--link-dir": flag.New(
+			"Symlinks will be created in this directory pointing to files/directories in --to_dir",
+			value.Path,
+			flag.Alias("-l"),
+			flag.Default("~"),
+			flag.Required(),
+		),
+		"--src-dir": flag.New(
+			"Directory containing files and directories to link to",
+			value.Path,
+			flag.Alias("-s"),
+			flag.Required(),
+		),
+	}
 
-	linkDirFlag := flag.New(
-		"Symlinks will be created in this directory pointing to files/directories in --to_dir",
-		value.Path,
-		flag.Alias("-l"),
-		flag.Default("~"),
-		flag.Required(),
-	)
-
-	srcDirFlag := flag.New(
-		"Directory containing files and directories to link to",
-		value.Path,
-		flag.Alias("-s"),
-		flag.Required(),
-	)
 	app := warg.New(
 		"fling",
 		section.New(
@@ -463,19 +556,13 @@ func main() {
 				"link",
 				"Link away!",
 				link,
-				command.AddFlag(
-					"--link-dir",
-					linkDirFlag,
-				),
-				command.AddFlag(
-					"--src-dir",
-					srcDirFlag,
-				),
-				command.WithFlag(
-					"--ignore",
-					"Patterns to ignore. Only applied to the last element of the path (the name or base)",
-					value.StringSlice,
-				),
+				command.AddFlags(linkUnlinkFlags),
+			),
+			section.WithCommand(
+				"unlink",
+				"Unlink previously created links",
+				unlink,
+				command.AddFlags(linkUnlinkFlags),
 			),
 			section.WithFlag(
 				"--color",

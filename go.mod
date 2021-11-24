@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/bbkane/go-color v0.0.4 // indirect
+	github.com/bbkane/go-color v0.0.4
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 // indirect

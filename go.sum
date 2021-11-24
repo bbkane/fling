@@ -1,7 +1,5 @@
 github.com/bbkane/go-color v0.0.4 h1:JNQIHp1zFvREq4vAp8XXMS8+sGanlA01WN8ANmLpXt4=
 github.com/bbkane/go-color v0.0.4/go.mod h1:W6SaTp8XGZOFqIWelWcVorgHFak1EFnagkaHoB5G9eE=
-github.com/bbkane/warg v0.0.4 h1:aBTF1ni0n555Tz2VLSDoGCFDMXCdk2T0ojzSVLkVAEw=
-github.com/bbkane/warg v0.0.4/go.mod h1:B2bGFtFXlXWP8cH7eU5rFT+SIlLJxhYQX0HBz2rmdAc=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/karrick/godirwalk v1.16.1 h1:DynhcF+bztK8gooS0+NDJFrdNZjJ3gzVzC545UNA9iw=
