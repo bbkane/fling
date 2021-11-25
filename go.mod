@@ -2,11 +2,11 @@ module github.com/bbkane/fling
 
 go 1.17
 
-// TODO: rm me
-replace github.com/bbkane/warg => /Users/bbkane/Git/warg
+// TODO: don't use this in prod
+// replace github.com/bbkane/warg => /Users/bbkane/Git/warg
 
 require (
-	github.com/bbkane/warg v0.0.4
+	github.com/bbkane/warg v0.0.5
 	github.com/karrick/godirwalk v1.16.1
 )
 

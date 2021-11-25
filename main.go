@@ -599,24 +599,24 @@ func main() {
 		"fling",
 		section.New(
 			"Create symlinks under location to link_to_parent",
-			section.WithCommand(
+			section.Command(
 				"version",
 				"Print version",
 				printVersion,
 			),
-			section.WithCommand(
+			section.Command(
 				"link",
 				"Link away!",
 				link,
-				command.AddFlags(linkUnlinkFlags),
+				command.ExistingFlags(linkUnlinkFlags),
 			),
-			section.WithCommand(
+			section.Command(
 				"unlink",
 				"Unlink previously created links",
 				unlink,
-				command.AddFlags(linkUnlinkFlags),
+				command.ExistingFlags(linkUnlinkFlags),
 			),
-			section.WithFlag(
+			section.Flag(
 				"--color",
 				"Control color (including for --help)",
 				value.StringEnum("true", "false", "auto"),
