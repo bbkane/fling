@@ -4,6 +4,10 @@ on:
   push:
     tags:
     - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+permissions:
+  contents: write
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
@@ -16,7 +20,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16
+          go-version: 1.17
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
@@ -26,4 +30,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP: ${{ secrets.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}
-
