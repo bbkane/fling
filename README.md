@@ -2,7 +2,6 @@ Basically a replacement to GNU Stow for my use cases:
 
 # TODO
 
-- use packaged version of warg :)
 - package for Homebrew
 - add --dotfiles true|false flag
 - add --script filename.sh flag that prints out an equivalent bash script to a file

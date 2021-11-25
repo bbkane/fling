@@ -1,0 +1,49 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod download
+    # you may remove this if you don't need go generate
+    # - go generate ./...
+builds:
+  - env:
+      - CGO_ENABLED=0
+    # I don't need to use build tags to embed files now that embed is a
+    # thing in go 1.16
+    # flags:
+    #   - -tags=dist
+    goos:
+      - linux
+      # - windows  # I don't trust Windows for symlinks :)
+      - darwin
+    goarch:
+      - amd64
+      # - i386  # does anyone care about i386?
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+# https://goreleaser.com/customization/homebrew/
+brews:
+  - tap:
+      owner: bbkane
+      name: homebrew-tap
+      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
+      token: "{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}"
+    folder: Formula
+    caveats: |
+      Unfortunately, Apple wants to charge developers $100/year to distribute
+      their apps without a big scary "... the developer cannot be verified"
+      warning. I'm not willing to pay that to give away free apps.
+      See https://www.macworld.com/article/3140183/how-to-install-an-app-in-macos-sierra-thats-not-signed-by-a-developer.html to work around that
+    homepage: "https://github.com/bbkane/fling"
+    description: "GNU Stow alternative for dotfiles"
