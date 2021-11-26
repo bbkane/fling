@@ -145,6 +145,20 @@ type fileInfo struct {
 	ignoredPaths      []ignoredPath
 }
 
+func fPrintHeader(f *bufio.Writer, header string) {
+	fmt.Fprint(
+		f,
+		color.Add(color.Bold+color.Underline, header+"\n\n"),
+	)
+}
+
+func fPrintErrorHeader(f *bufio.Writer, header string) {
+	fmt.Fprint(
+		f,
+		color.Add(color.Bold+color.Underline+color.ForegroundRed, header+"\n\n"),
+	)
+}
+
 func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fileInfo, error) {
 	linkDir, err := filepath.Abs(linkDir)
 	if err != nil {
@@ -345,10 +359,7 @@ func unlink(pf flag.PassedFlags) error {
 		f := bufio.NewWriter(os.Stdout)
 
 		if len(fi.ignoredPaths) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline, "Ignored paths:\n\n"),
-			)
+			fPrintHeader(f, "Ignored paths:")
 			for _, e := range fi.ignoredPaths {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -356,10 +367,7 @@ func unlink(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.dirLinksToCreate) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline, "Uncreated dir links:\n\n"),
-			)
+			fPrintHeader(f, "Uncreated dir links:")
 			for _, e := range fi.dirLinksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -367,10 +375,7 @@ func unlink(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.fileLinksToCreate) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline, "Uncreated file links:\n\n"),
-			)
+			fPrintHeader(f, "Uncreated file links:")
 			for _, e := range fi.fileLinksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -378,10 +383,7 @@ func unlink(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.existingLinks) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Underline+color.Bold, "Links to delete:\n\n"),
-			)
+			fPrintHeader(f, "Links to delete:")
 			for _, e := range fi.existingLinks {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -389,10 +391,7 @@ func unlink(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.pathErrs) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
-			)
+			fPrintErrorHeader(f, "Path errors:")
 			for _, e := range fi.pathErrs {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -400,10 +399,7 @@ func unlink(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.pathsErrs) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
-			)
+			fPrintErrorHeader(f, "Proposed link mismatch errors:")
 			for _, e := range fi.pathsErrs {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -477,10 +473,7 @@ func link(pf flag.PassedFlags) error {
 		f := bufio.NewWriter(os.Stdout)
 
 		if len(fi.ignoredPaths) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline, "Ignored paths:\n\n"),
-			)
+			fPrintHeader(f, "Ignored paths:")
 			for _, e := range fi.ignoredPaths {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -488,10 +481,7 @@ func link(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.dirLinksToCreate) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline, "Dir links to create:\n\n"),
-			)
+			fPrintHeader(f, "Dir links to create:")
 			for _, e := range fi.dirLinksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -499,10 +489,7 @@ func link(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.fileLinksToCreate) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline, "File links to create:\n\n"),
-			)
+			fPrintHeader(f, "File links to create:")
 			for _, e := range fi.fileLinksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -510,10 +497,7 @@ func link(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.existingLinks) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Underline+color.Bold, "Pre-existing correct Links:\n\n"),
-			)
+			fPrintHeader(f, "Pre-existing correct links:")
 			for _, e := range fi.existingLinks {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -521,10 +505,7 @@ func link(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.pathErrs) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Path errors:\n\n"),
-			)
+			fPrintErrorHeader(f, "Path errors:")
 			for _, e := range fi.pathErrs {
 				fmt.Fprintf(f, "%s\n", e)
 			}
@@ -532,10 +513,7 @@ func link(pf flag.PassedFlags) error {
 		}
 
 		if len(fi.pathsErrs) > 0 {
-			fmt.Fprint(
-				f,
-				color.Add(color.Bold+color.Underline+color.ForegroundRed, "Proposed link mismatch errors:\n\n"),
-			)
+			fPrintErrorHeader(f, "Proposed link mismatch errors:")
 			for _, e := range fi.pathsErrs {
 				fmt.Fprintf(f, "%s\n", e)
 			}
