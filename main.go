@@ -70,12 +70,12 @@ func checkMode(mode os.FileMode) error {
 	return nil
 }
 
-type linkToCreate struct {
+type linkT struct {
 	src  string
 	link string
 }
 
-func (t linkToCreate) String() string {
+func (t linkT) String() string {
 	return fmt.Sprintf(
 		"- %s: %s\n  %s: %s",
 		color.Add(color.Bold, "src"),
@@ -85,20 +85,13 @@ func (t linkToCreate) String() string {
 	)
 }
 
-type existingLink struct {
-	src  string
-	link string
-}
-
-func (t existingLink) String() string {
-	return fmt.Sprintf(
-		"- %s: %s\n  %s: %s",
-		color.Add(color.Bold, "src"),
-		t.src,
-		color.Add(color.Bold, "link"),
-		t.link,
-	)
-}
+// NOTE: making these type aliases instead of type definitions
+// so I can use the String() method of linkT, even though
+// it means I can assign instances of each types to instances of
+// any other equivalent type...
+type fileLinkToCreate = linkT
+type dirLinkToCreate = linkT
+type existingLink = linkT
 
 type pathErr struct {
 	path string
@@ -144,11 +137,12 @@ func (t ignoredPath) String() string {
 }
 
 type fileInfo struct {
-	linksToCreate []linkToCreate
-	existingLinks []existingLink
-	pathErrs      []pathErr
-	pathsErrs     []pathsErr
-	ignoredPaths  []ignoredPath
+	dirLinksToCreate  []dirLinkToCreate
+	fileLinksToCreate []fileLinkToCreate
+	existingLinks     []existingLink
+	pathErrs          []pathErr
+	pathsErrs         []pathsErr
+	ignoredPaths      []ignoredPath
 }
 
 func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fileInfo, error) {
@@ -162,11 +156,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 		return nil, fmt.Errorf("couldn't get abs path for srcDir: %w", err)
 	}
 
-	linksToCreate := []linkToCreate{}
-	existingLinks := []existingLink{}
-	pathErrs := []pathErr{}
-	pathsErrs := []pathsErr{}
-	ignoredPaths := []ignoredPath{}
+	fi := fileInfo{}
 
 	err = godirwalk.Walk(srcDir, &godirwalk.Options{
 
@@ -183,11 +173,12 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 					path: srcPath,
 					err:  fmt.Errorf("can't get relative path: %s, %w", srcDir, err),
 				}
-				pathErrs = append(pathErrs, p)
+				fi.pathErrs = append(fi.pathErrs, p)
 				return godirwalk.SkipThis
 			}
 			linkPath := filepath.Join(linkDir, relPath)
 
+			// ignore regexes
 			for _, pattern := range ignorePatterns {
 				// NOTE: can compile these regexes for speed
 				match, err := regexp.Match(pattern, []byte(srcDe.Name()))
@@ -196,7 +187,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 					return err // Exit immediately on a bad pattern.
 				}
 				if match {
-					ignoredPaths = append(ignoredPaths, ignoredPath(srcPath))
+					fi.ignoredPaths = append(fi.ignoredPaths, ignoredPath(srcPath))
 					return godirwalk.SkipThis
 				}
 			}
@@ -207,7 +198,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 					path: srcPath,
 					err:  errors.New("is symlink"),
 				}
-				pathErrs = append(pathErrs, p)
+				fi.pathErrs = append(fi.pathErrs, p)
 				return godirwalk.SkipThis
 			}
 
@@ -218,27 +209,36 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 					path: srcPath,
 					err:  err,
 				}
-				pathErrs = append(pathErrs, p)
+				fi.pathErrs = append(fi.pathErrs, p)
 				return godirwalk.SkipThis
 			}
 
 			linkPathLstatRes, linkPathLstatErr := os.Lstat(linkPath)
 			if errors.Is(linkPathLstatErr, fs.ErrNotExist) {
-				// fmt.Printf("link: srcPath: %s , linkPath: %s\n", srcPath, linkPath)
-				ltc := linkToCreate{
-					src:  srcPath,
-					link: linkPath,
+				if srcDe.IsDir() {
+					ltc := dirLinkToCreate{
+						src:  srcPath,
+						link: linkPath,
+					}
+					fi.dirLinksToCreate = append(fi.dirLinksToCreate, ltc)
+					return godirwalk.SkipThis
+				} else {
+					ltc := fileLinkToCreate{
+						src:  srcPath,
+						link: linkPath,
+					}
+					fi.fileLinksToCreate = append(fi.fileLinksToCreate, ltc)
+					return godirwalk.SkipThis
 				}
-				linksToCreate = append(linksToCreate, ltc)
-				return godirwalk.SkipThis // TODO: ensure this skips children.... It says "skip this directory entry", so probably...
 			}
+
+			// So linkPath does exist. Let's inspect it and see what we can do
 			if linkPathLstatErr != nil {
-				// fmt.Printf("linkPathStatErr: %s: %s\n", linkPath, linkPathLstatErr)
 				p := pathErr{
 					path: linkPath,
 					err:  linkPathLstatErr,
 				}
-				pathErrs = append(pathErrs, p)
+				fi.pathErrs = append(fi.pathErrs, p)
 				return godirwalk.SkipThis
 			}
 			err = checkMode(linkPathLstatRes.Mode())
@@ -248,7 +248,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 					path: linkPath,
 					err:  err,
 				}
-				pathErrs = append(pathErrs, p)
+				fi.pathErrs = append(fi.pathErrs, p)
 				return godirwalk.SkipThis
 			}
 			// from my tests on MacOS, if the symlink bit is set, the directory mode will not be set
@@ -264,7 +264,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 						path: linkPath,
 						err:  err,
 					}
-					pathErrs = append(pathErrs, p)
+					fi.pathErrs = append(fi.pathErrs, p)
 					return godirwalk.SkipThis
 				}
 				if linkPathSymlinkTarget == srcPath {
@@ -273,7 +273,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 						src:  srcPath,
 						link: linkPath,
 					}
-					existingLinks = append(existingLinks, el)
+					fi.existingLinks = append(fi.existingLinks, el)
 					return godirwalk.SkipThis
 				} else {
 					// fmt.Printf("linkPath unrecognized symlink: %s -> %s , not %s\n", linkPath, linkPathSymlinkTarget, srcPath)
@@ -282,7 +282,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 						link: linkPath,
 						err:  fmt.Errorf("link is already a symlink to: %s", linkPathSymlinkTarget),
 					}
-					pathsErrs = append(pathsErrs, pse)
+					fi.pathsErrs = append(fi.pathsErrs, pse)
 					return godirwalk.SkipThis
 				}
 			}
@@ -299,7 +299,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 						link: linkPath,
 						err:  errors.New("link is existing dir and src is file"),
 					}
-					pathsErrs = append(pathsErrs, pse)
+					fi.pathsErrs = append(fi.pathsErrs, pse)
 					return nil
 				}
 
@@ -309,7 +309,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 				path: linkPath,
 				err:  errors.New("linkPath is already an existing file"),
 			}
-			pathErrs = append(pathErrs, p)
+			fi.pathErrs = append(fi.pathErrs, p)
 			return godirwalk.SkipThis
 		},
 		// https://pkg.go.dev/github.com/karrick/godirwalk#Options
@@ -321,13 +321,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 		return nil, fmt.Errorf("walking error: %w", err)
 	}
 
-	return &fileInfo{
-		linksToCreate: linksToCreate,
-		existingLinks: existingLinks,
-		pathErrs:      pathErrs,
-		pathsErrs:     pathsErrs,
-		ignoredPaths:  ignoredPaths,
-	}, nil
+	return &fi, nil
 
 }
 
@@ -361,12 +355,23 @@ func unlink(pf flag.PassedFlags) error {
 			fmt.Fprintln(f)
 		}
 
-		if len(fi.linksToCreate) > 0 {
+		if len(fi.dirLinksToCreate) > 0 {
 			fmt.Fprint(
 				f,
-				color.Add(color.Bold+color.Underline, "Uncreated links:\n\n"),
+				color.Add(color.Bold+color.Underline, "Uncreated dir links:\n\n"),
 			)
-			for _, e := range fi.linksToCreate {
+			for _, e := range fi.dirLinksToCreate {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.fileLinksToCreate) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline, "Uncreated file links:\n\n"),
+			)
+			for _, e := range fi.fileLinksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
 			}
 			fmt.Fprintln(f)
@@ -482,12 +487,23 @@ func link(pf flag.PassedFlags) error {
 			fmt.Fprintln(f)
 		}
 
-		if len(fi.linksToCreate) > 0 {
+		if len(fi.dirLinksToCreate) > 0 {
 			fmt.Fprint(
 				f,
-				color.Add(color.Bold+color.Underline, "Links to create:\n\n"),
+				color.Add(color.Bold+color.Underline, "Dir links to create:\n\n"),
 			)
-			for _, e := range fi.linksToCreate {
+			for _, e := range fi.dirLinksToCreate {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.fileLinksToCreate) > 0 {
+			fmt.Fprint(
+				f,
+				color.Add(color.Bold+color.Underline, "File links to create:\n\n"),
+			)
+			for _, e := range fi.fileLinksToCreate {
 				fmt.Fprintf(f, "%s\n", e)
 			}
 			fmt.Fprintln(f)
@@ -528,7 +544,7 @@ func link(pf flag.PassedFlags) error {
 		f.Flush()
 	}
 
-	if len(fi.linksToCreate) == 0 {
+	if len(fi.fileLinksToCreate) == 0 && len(fi.dirLinksToCreate) == 0 {
 		fmt.Print(
 			color.Add(
 				color.Bold+color.BrightForegroundGreen,
@@ -559,7 +575,13 @@ func link(pf flag.PassedFlags) error {
 		}
 	}
 
-	for _, e := range fi.linksToCreate {
+	for _, e := range fi.dirLinksToCreate {
+		err := os.Symlink(e.src, e.link)
+		if err != nil {
+			return err
+		}
+	}
+	for _, e := range fi.fileLinksToCreate {
 		err := os.Symlink(e.src, e.link)
 		if err != nil {
 			return err
@@ -571,14 +593,13 @@ func link(pf flag.PassedFlags) error {
 			"Done!\n",
 		),
 	)
-
 	return nil
 }
 
 func main() {
 	linkUnlinkFlags := flag.FlagMap{
 		"--ignore": flag.New(
-			"ignore regex - note that these patterns are not applied to the full path, only the last element (the name or base)",
+			"ignore file/dir if the name (not the whole path) matches this regex",
 			value.StringSlice,
 			flag.Alias("-i"),
 		),
