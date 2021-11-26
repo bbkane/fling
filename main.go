@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"strings"
 
@@ -188,7 +189,8 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 			linkPath := filepath.Join(linkDir, relPath)
 
 			for _, pattern := range ignorePatterns {
-				match, err := filepath.Match(pattern, srcDe.Name())
+				// NOTE: can compile these regexes for speed
+				match, err := regexp.Match(pattern, []byte(srcDe.Name()))
 				if err != nil {
 					err = fmt.Errorf("invalid --ignore pattern: %s: %w", pattern, err)
 					return err // Exit immediately on a bad pattern.
@@ -576,7 +578,7 @@ func link(pf flag.PassedFlags) error {
 func main() {
 	linkUnlinkFlags := flag.FlagMap{
 		"--ignore": flag.New(
-			"Patterns to ignore. Only applied to the last element of the path (the name or base)",
+			"ignore regex - note that these patterns are not applied to the full path, only the last element (the name or base)",
 			value.StringSlice,
 			flag.Alias("-i"),
 		),

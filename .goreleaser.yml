@@ -9,10 +9,6 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
-    # I don't need to use build tags to embed files now that embed is a
-    # thing in go 1.16
-    # flags:
-    #   - -tags=dist
     goos:
       - linux
       # - windows  # I don't trust Windows for symlinks :)
