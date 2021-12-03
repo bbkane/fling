@@ -91,7 +91,9 @@ func (t linkT) String() string {
 // any other equivalent type...
 type fileLinkToCreate = linkT
 type dirLinkToCreate = linkT
-type existingLink = linkT
+
+type existingFileLink = linkT
+type existingDirLink = linkT
 
 type pathErr struct {
 	path string
@@ -139,7 +141,8 @@ func (t ignoredPath) String() string {
 type fileInfo struct {
 	dirLinksToCreate  []dirLinkToCreate
 	fileLinksToCreate []fileLinkToCreate
-	existingLinks     []existingLink
+	existingDirLinks  []existingDirLink
+	existingFileLinks []existingFileLink
 	pathErrs          []pathErr
 	pathsErrs         []pathsErr
 	ignoredPaths      []ignoredPath
@@ -317,11 +320,21 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDot
 				}
 				if linkPathSymlinkTarget == srcPath {
 					// fmt.Printf("linkPath already points to target. No need to do more")
-					el := existingLink{
-						src:  srcPath,
-						link: linkPath,
+
+					if srcDe.IsDir() {
+						edl := existingDirLink{
+							src:  srcPath,
+							link: linkPath,
+						}
+						fi.existingDirLinks = append(fi.existingDirLinks, edl)
+					} else {
+						efl := existingFileLink{
+							src:  srcPath,
+							link: linkPath,
+						}
+						fi.existingFileLinks = append(fi.existingFileLinks, efl)
 					}
-					fi.existingLinks = append(fi.existingLinks, el)
+
 					return godirwalk.SkipThis
 				} else {
 					// fmt.Printf("linkPath unrecognized symlink: %s -> %s , not %s\n", linkPath, linkPathSymlinkTarget, srcPath)
@@ -417,9 +430,17 @@ func unlink(pf flag.PassedFlags) error {
 			fmt.Fprintln(f)
 		}
 
-		if len(fi.existingLinks) > 0 {
-			fPrintHeader(f, "Links to delete:")
-			for _, e := range fi.existingLinks {
+		if len(fi.existingDirLinks) > 0 {
+			fPrintHeader(f, "Dir links to delete:")
+			for _, e := range fi.existingDirLinks {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+
+		if len(fi.existingFileLinks) > 0 {
+			fPrintHeader(f, "File links to delete:")
+			for _, e := range fi.existingFileLinks {
 				fmt.Fprintf(f, "%s\n", e)
 			}
 			fmt.Fprintln(f)
@@ -442,7 +463,7 @@ func unlink(pf flag.PassedFlags) error {
 		}
 		f.Flush()
 	}
-	if len(fi.existingLinks) == 0 {
+	if len(fi.existingFileLinks) == 0 && len(fi.existingDirLinks) == 0 {
 		fmt.Print(
 			color.Add(
 				color.Bold+color.BrightForegroundGreen,
@@ -472,7 +493,13 @@ func unlink(pf flag.PassedFlags) error {
 			return err
 		}
 	}
-	for _, e := range fi.existingLinks {
+	for _, e := range fi.existingDirLinks {
+		err := os.Remove(e.link)
+		if err != nil {
+			return err
+		}
+	}
+	for _, e := range fi.existingFileLinks {
 		err := os.Remove(e.link)
 		if err != nil {
 			return err
@@ -531,9 +558,16 @@ func link(pf flag.PassedFlags) error {
 			fmt.Fprintln(f)
 		}
 
-		if len(fi.existingLinks) > 0 {
-			fPrintHeader(f, "Pre-existing correct links:")
-			for _, e := range fi.existingLinks {
+		if len(fi.existingDirLinks) > 0 {
+			fPrintHeader(f, "Pre-existing correct dir links:")
+			for _, e := range fi.existingDirLinks {
+				fmt.Fprintf(f, "%s\n", e)
+			}
+			fmt.Fprintln(f)
+		}
+		if len(fi.existingFileLinks) > 0 {
+			fPrintHeader(f, "Pre-existing correct file links:")
+			for _, e := range fi.existingFileLinks {
 				fmt.Fprintf(f, "%s\n", e)
 			}
 			fmt.Fprintln(f)
