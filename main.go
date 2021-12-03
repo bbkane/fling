@@ -159,7 +159,17 @@ func fPrintErrorHeader(f *bufio.Writer, header string) {
 	)
 }
 
-func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fileInfo, error) {
+// replacePrefix return (s with prefixed replaced, true)
+// if the string has the prefix, otherwise (s, false)
+func replacePrefix(s string, prefix string, replacement string) (string, bool) {
+	if strings.HasPrefix(s, prefix) {
+		s = replacement + strings.TrimPrefix(s, prefix)
+		return s, true
+	}
+	return s, false
+}
+
+func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDotfiles bool) (*fileInfo, error) {
 	linkDir, err := filepath.Abs(linkDir)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get abs path for linkDir: %w", err)
@@ -171,6 +181,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 	}
 
 	fi := fileInfo{}
+	linkPathReplacements := make(map[string]string)
 
 	err = godirwalk.Walk(srcDir, &godirwalk.Options{
 
@@ -178,6 +189,20 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 			// fmt.Printf("%s - %s\n", de.ModeType(), osPathname)
 			if srcPath == srcDir {
 				return nil // skip the first entry (toDir)
+			}
+
+			// ignore srcPath name regexes
+			for _, pattern := range ignorePatterns {
+				// NOTE: can compile these regexes for speed
+				match, err := regexp.Match(pattern, []byte(srcDe.Name()))
+				if err != nil {
+					err = fmt.Errorf("invalid --ignore pattern: %s: %w", pattern, err)
+					return err // Exit immediately on a bad pattern.
+				}
+				if match {
+					fi.ignoredPaths = append(fi.ignoredPaths, ignoredPath(srcPath))
+					return godirwalk.SkipThis
+				}
 			}
 
 			// determine linkPath
@@ -192,17 +217,26 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 			}
 			linkPath := filepath.Join(linkDir, relPath)
 
-			// ignore regexes
-			for _, pattern := range ignorePatterns {
-				// NOTE: can compile these regexes for speed
-				match, err := regexp.Match(pattern, []byte(srcDe.Name()))
-				if err != nil {
-					err = fmt.Errorf("invalid --ignore pattern: %s: %w", pattern, err)
-					return err // Exit immediately on a bad pattern.
+			// Now that we have a linkPath, "correct" it if necessary by replacing dot- with .
+			// because we're not changing srcPath, "errors" will keep popping up, so keep a list of
+			// replacements around to "correct" parent directories
+			if isDotfiles {
+				// replace previous elements of the path from parents we've already seen
+				// fmt.Printf("linkPathReplacements: %#v\n", linkPathReplacements)
+				for path, replacement := range linkPathReplacements {
+					// fmt.Printf(":%s: %s -> %s\n", linkPath, path, replacement)
+					linkPath, _ = replacePrefix(linkPath, path, replacement)
 				}
-				if match {
-					fi.ignoredPaths = append(fi.ignoredPaths, ignoredPath(srcPath))
-					return godirwalk.SkipThis
+
+				linkPathName := filepath.Base(linkPath)
+				linkPathDir := filepath.Dir(linkPath)
+				// replace the last element of the path if necessary
+				linkPathNameNew, replaced := replacePrefix(linkPathName, "dot-", ".")
+				if replaced {
+					// fmt.Printf("replaced: %s -> %s\n", linkPathName, linkPathNameNew)
+					linkPathNew := filepath.Join(linkPathDir, linkPathNameNew)
+					linkPathReplacements[linkPath] = linkPathNew
+					linkPath = linkPathNew
 				}
 			}
 
@@ -294,7 +328,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 					pse := pathsErr{
 						src:  srcPath,
 						link: linkPath,
-						err:  fmt.Errorf("link is already a symlink to: %s", linkPathSymlinkTarget),
+						err:  fmt.Errorf("link is already a symlink to src: %s", linkPathSymlinkTarget),
 					}
 					fi.pathsErrs = append(fi.pathsErrs, pse)
 					return godirwalk.SkipThis
@@ -342,6 +376,7 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string) (*fil
 func unlink(pf flag.PassedFlags) error {
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
+	isDotfiles := pf["--dotfiles"].(bool)
 	ignorePatterns := []string{}
 	if ignoreF, exists := pf["--ignore"]; exists {
 		ignorePatterns = ignoreF.([]string)
@@ -349,7 +384,7 @@ func unlink(pf flag.PassedFlags) error {
 
 	help.ConditionallyEnableColor(pf, os.Stdout)
 
-	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns)
+	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
 	if err != nil {
 		return err
 	}
@@ -455,15 +490,15 @@ func unlink(pf flag.PassedFlags) error {
 func link(pf flag.PassedFlags) error {
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
+	isDotfiles := pf["--dotfiles"].(bool)
 	ignorePatterns := []string{}
 	if ignoreF, exists := pf["--ignore"]; exists {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	// help.CondionallyEnableColor(pf, os.Stdout)
 	help.ConditionallyEnableColor(pf, os.Stdout)
 
-	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns)
+	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
 	if err != nil {
 		return err
 	}
@@ -537,6 +572,7 @@ func link(pf flag.PassedFlags) error {
 			"Create links?\n",
 		),
 	)
+
 	// confirmation prompt
 	{
 		fmt.Print("Type 'yes' to continue: ")
@@ -576,6 +612,12 @@ func link(pf flag.PassedFlags) error {
 
 func main() {
 	linkUnlinkFlags := flag.FlagMap{
+		"--dotfiles": flag.New(
+			"replace a src file/dir name starting with 'dot-' to start with '.'",
+			value.Bool,
+			flag.Default("true"),
+			flag.Required(),
+		),
 		"--ignore": flag.New(
 			"ignore file/dir if the name (not the whole path) matches this regex",
 			value.StringSlice,
