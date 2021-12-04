@@ -406,7 +406,7 @@ func askPrompt(ask string) (bool, error) {
 		return true, nil
 	case "false":
 		return true, nil
-	case "dryrun":
+	case "dry-run":
 		return false, nil
 	default:
 		return false, fmt.Errorf("ask not valid: %s", ask)
@@ -674,23 +674,23 @@ func main() {
 	linkUnlinkFlags := flag.FlagMap{
 		"--ask": flag.New(
 			"Whether to ask before making changes",
-			value.StringEnum("true", "false", "dryrun"),
+			value.StringEnum("true", "false", "dry-run"),
 			flag.Default("true"),
 			flag.Required(),
 		),
 		"--dotfiles": flag.New(
-			"replace a src file/dir name starting with 'dot-' to start with '.'",
+			"Files/dirs starting with 'dot-' will have links starting with '.'",
 			value.Bool,
 			flag.Default("true"),
 			flag.Required(),
 		),
 		"--ignore": flag.New(
-			"ignore file/dir if the name (not the whole path) matches this regex",
+			"Ignore file/dir if the name (not the whole path) matches passed regex",
 			value.StringSlice,
 			flag.Alias("-i"),
 		),
 		"--link-dir": flag.New(
-			"Symlinks will be created in this directory pointing to files/directories in --to_dir",
+			"Symlinks will be created in this directory pointing to files/directories in --src-dir",
 			value.Path,
 			flag.Alias("-l"),
 			flag.Default("~"),
@@ -707,7 +707,7 @@ func main() {
 	app := warg.New(
 		"fling",
 		section.New(
-			"Create symlinks under location to link_to_parent",
+			"Link and unlink directory heirarchies ",
 			section.Command(
 				"version",
 				"Print version",
@@ -715,7 +715,7 @@ func main() {
 			),
 			section.Command(
 				"link",
-				"Link away!",
+				"Create links",
 				link,
 				command.ExistingFlags(linkUnlinkFlags),
 			),
