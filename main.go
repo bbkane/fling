@@ -386,7 +386,35 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDot
 
 }
 
+// askPrompt looks at the ask string and decides whether to continue
+// the bool indicates whether to continue and the err indicates any errors
+func askPrompt(ask string) (bool, error) {
+	switch ask {
+	case "true":
+		fmt.Print("Type 'yes' to continue: ")
+		reader := bufio.NewReader(os.Stdin)
+		confirmation, err := reader.ReadString('\n')
+		if err != nil {
+			err = fmt.Errorf("confirmation ReadString error: %w", err)
+			return false, err
+		}
+		confirmation = strings.TrimSpace(confirmation)
+		if confirmation != "yes" {
+			err := fmt.Errorf("confirmation not yes: %v", confirmation)
+			return false, err
+		}
+		return true, nil
+	case "false":
+		return true, nil
+	case "dryrun":
+		return false, nil
+	default:
+		return false, fmt.Errorf("ask not valid: %s", ask)
+	}
+}
+
 func unlink(pf flag.PassedFlags) error {
+	ask := pf["--ask"].(string)
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
 	isDotfiles := pf["--dotfiles"].(bool)
@@ -478,21 +506,20 @@ func unlink(pf flag.PassedFlags) error {
 			"Delete links?\n",
 		),
 	)
-	// confirmation prompt
-	{
-		fmt.Print("Type 'yes' to continue: ")
-		reader := bufio.NewReader(os.Stdin)
-		confirmation, err := reader.ReadString('\n')
-		if err != nil {
-			err = fmt.Errorf("confirmation ReadString error: %w", err)
-			return err
+
+	keepGoing, err := askPrompt(ask)
+	if !keepGoing {
+		if err == nil {
+			fmt.Print(
+				color.Add(
+					color.Bold+color.BrightForegroundGreen,
+					"Dry run - no changes made\n",
+				),
+			)
 		}
-		confirmation = strings.TrimSpace(confirmation)
-		if confirmation != "yes" {
-			err := fmt.Errorf("confirmation not yes: %v", confirmation)
-			return err
-		}
+		return err
 	}
+
 	for _, e := range fi.existingDirLinks {
 		err := os.Remove(e.link)
 		if err != nil {
@@ -515,6 +542,7 @@ func unlink(pf flag.PassedFlags) error {
 }
 
 func link(pf flag.PassedFlags) error {
+	ask := pf["--ask"].(string)
 	linkDir := pf["--link-dir"].(string)
 	srcDir := pf["--src-dir"].(string)
 	isDotfiles := pf["--dotfiles"].(bool)
@@ -600,6 +628,7 @@ func link(pf flag.PassedFlags) error {
 		)
 		return nil // exit
 	}
+
 	fmt.Print(
 		color.Add(
 			color.Bold,
@@ -607,20 +636,17 @@ func link(pf flag.PassedFlags) error {
 		),
 	)
 
-	// confirmation prompt
-	{
-		fmt.Print("Type 'yes' to continue: ")
-		reader := bufio.NewReader(os.Stdin)
-		confirmation, err := reader.ReadString('\n')
-		if err != nil {
-			err = fmt.Errorf("confirmation ReadString error: %w", err)
-			return err
+	keepGoing, err := askPrompt(ask)
+	if !keepGoing {
+		if err == nil {
+			fmt.Print(
+				color.Add(
+					color.Bold+color.BrightForegroundGreen,
+					"Dry run - no changed made\n",
+				),
+			)
 		}
-		confirmation = strings.TrimSpace(confirmation)
-		if confirmation != "yes" {
-			err := fmt.Errorf("confirmation not yes: %v", confirmation)
-			return err
-		}
+		return err
 	}
 
 	for _, e := range fi.dirLinksToCreate {
@@ -646,6 +672,12 @@ func link(pf flag.PassedFlags) error {
 
 func main() {
 	linkUnlinkFlags := flag.FlagMap{
+		"--ask": flag.New(
+			"Whether to ask before making changes",
+			value.StringEnum("true", "false", "dryrun"),
+			flag.Default("true"),
+			flag.Required(),
+		),
 		"--dotfiles": flag.New(
 			"replace a src file/dir name starting with 'dot-' to start with '.'",
 			value.Bool,
