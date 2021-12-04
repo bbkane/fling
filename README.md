@@ -15,10 +15,7 @@ As a tradeoff, fling's codebase is simpler. fling compiles to a single binary an
 
 ## Example
 
-See more options with `fling --help`
-
-TODO: finish GIF
-
+![demo](./demo.gif)
 
 ## Notes
 
