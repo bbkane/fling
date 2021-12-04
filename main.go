@@ -18,6 +18,7 @@ import (
 	"github.com/bbkane/warg/help"
 	"github.com/bbkane/warg/section"
 	"github.com/bbkane/warg/value"
+
 	"github.com/karrick/godirwalk"
 )
 
@@ -83,6 +84,12 @@ func (t linkT) String() string {
 		color.Add(color.Bold, "link"),
 		t.link,
 	)
+}
+
+func fPrintLinkTs(f *bufio.Writer, lTs []linkT) {
+	for _, e := range lTs {
+		fmt.Fprintf(f, "%s\n", e)
+	}
 }
 
 // NOTE: making these type aliases instead of type definitions
@@ -444,33 +451,25 @@ func unlink(pf flag.PassedFlags) error {
 
 		if len(fi.dirLinksToCreate) > 0 {
 			fPrintHeader(f, "Uncreated dir links:")
-			for _, e := range fi.dirLinksToCreate {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.dirLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.fileLinksToCreate) > 0 {
 			fPrintHeader(f, "Uncreated file links:")
-			for _, e := range fi.fileLinksToCreate {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.fileLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.existingDirLinks) > 0 {
 			fPrintHeader(f, "Dir links to delete:")
-			for _, e := range fi.existingDirLinks {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.existingDirLinks)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.existingFileLinks) > 0 {
 			fPrintHeader(f, "File links to delete:")
-			for _, e := range fi.existingFileLinks {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.existingFileLinks)
 			fmt.Fprintln(f)
 		}
 
@@ -572,32 +571,24 @@ func link(pf flag.PassedFlags) error {
 
 		if len(fi.dirLinksToCreate) > 0 {
 			fPrintHeader(f, "Dir links to create:")
-			for _, e := range fi.dirLinksToCreate {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.dirLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.fileLinksToCreate) > 0 {
 			fPrintHeader(f, "File links to create:")
-			for _, e := range fi.fileLinksToCreate {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.fileLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.existingDirLinks) > 0 {
 			fPrintHeader(f, "Pre-existing correct dir links:")
-			for _, e := range fi.existingDirLinks {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.existingDirLinks)
 			fmt.Fprintln(f)
 		}
 		if len(fi.existingFileLinks) > 0 {
 			fPrintHeader(f, "Pre-existing correct file links:")
-			for _, e := range fi.existingFileLinks {
-				fmt.Fprintf(f, "%s\n", e)
-			}
+			fPrintLinkTs(f, fi.existingFileLinks)
 			fmt.Fprintln(f)
 		}
 
