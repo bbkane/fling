@@ -1,6 +1,6 @@
 # fling
 
-fling is a symlink farmer similar to [GNU Stow](https://www.gnu.org/software/stow/) that I use for my [dotfiles](https://github.com/bbkane/dotfiles).
+fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to [GNU Stow](https://www.gnu.org/software/stow/). I use fling to manage my [dotfiles](https://github.com/bbkane/dotfiles)
 
 fling is much dumber than GNU Stow - it's missing several options, only considers one directory at a time, and deals with absolute paths only (in contrast, GNU Stow works exclusively with relative paths).
 
@@ -9,7 +9,7 @@ As a tradeoff, fling's codebase is simpler. fling compiles to a single binary an
 ## Install
 
 - Homebrew: `brew install bbkane/tap/fling`
-- Download Mac/Linux/Windows executable: [GitHub releases](https://github.com/bbkane/fling/releases)
+- Download Mac/Linux executable: [GitHub releases](https://github.com/bbkane/fling/releases)
 - Go: `go install github.com/bbkane/fling@latest`
 - Build with [goreleaser](https://goreleaser.com/) after cloning: `goreleaser --snapshot --skip-publish --rm-dist`
 
