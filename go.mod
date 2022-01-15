@@ -6,7 +6,7 @@ go 1.17
 // replace github.com/bbkane/warg => /Users/bbkane/Git/warg
 
 require (
-	github.com/bbkane/warg v0.0.5
+	github.com/bbkane/warg v0.0.8
 	github.com/karrick/godirwalk v1.16.1
 )
 
