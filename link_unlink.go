@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bbkane/go-color"
+	"github.com/bbkane/gocolor"
 	"github.com/bbkane/warg/flag"
 	"github.com/bbkane/warg/help"
 	"github.com/karrick/godirwalk"
@@ -49,7 +49,7 @@ type linkT struct {
 	link string
 }
 
-func (t linkT) String() string {
+func (t linkT) ColorString(color *gocolor.Color) string {
 	return fmt.Sprintf(
 		"- %s: %s\n  %s: %s",
 		color.Add(color.Bold, "src"),
@@ -59,9 +59,9 @@ func (t linkT) String() string {
 	)
 }
 
-func fPrintLinkTs(f *bufio.Writer, lTs []linkT) {
+func fPrintLinkTs(f *bufio.Writer, color *gocolor.Color, lTs []linkT) {
 	for _, e := range lTs {
-		fmt.Fprintf(f, "%s\n", e)
+		fmt.Fprintf(f, "%s\n", e.ColorString(color))
 	}
 }
 
@@ -80,12 +80,12 @@ type pathErr struct {
 	err  error
 }
 
-func (t pathErr) String() string {
+func (t pathErr) ColorString(color *gocolor.Color) string {
 	return fmt.Sprintf(
 		"- %s: %s\n  %s: %s",
 		color.Add(color.Bold, "path"),
 		t.path,
-		color.Add(color.Bold+color.ForegroundRed, "err"),
+		color.Add(color.Bold+color.FgRed, "err"),
 		t.err,
 	)
 }
@@ -96,21 +96,21 @@ type pathsErr struct {
 	err  error
 }
 
-func (t pathsErr) String() string {
+func (t pathsErr) ColorString(color *gocolor.Color) string {
 	return fmt.Sprintf(
 		"- %s: %s\n  %s: %s\n  %s: %s",
 		color.Add(color.Bold, "src"),
 		t.src,
 		color.Add(color.Bold, "link"),
 		t.link,
-		color.Add(color.Bold+color.ForegroundRed, "err"),
+		color.Add(color.Bold+color.FgRed, "err"),
 		t.err,
 	)
 }
 
 type ignoredPath string
 
-func (t ignoredPath) String() string {
+func (t ignoredPath) ColorString(color *gocolor.Color) string {
 	return fmt.Sprintf(
 		"- %s: %s",
 		color.Add(color.Bold, "path"),
@@ -128,17 +128,17 @@ type fileInfo struct {
 	ignoredPaths      []ignoredPath
 }
 
-func fPrintHeader(f *bufio.Writer, header string) {
+func fPrintHeader(f *bufio.Writer, color *gocolor.Color, header string) {
 	fmt.Fprint(
 		f,
 		color.Add(color.Bold+color.Underline, header+"\n\n"),
 	)
 }
 
-func fPrintErrorHeader(f *bufio.Writer, header string) {
+func fPrintErrorHeader(f *bufio.Writer, color *gocolor.Color, header string) {
 	fmt.Fprint(
 		f,
-		color.Add(color.Bold+color.Underline+color.ForegroundRed, header+"\n\n"),
+		color.Add(color.Bold+color.Underline+color.FgRed, header+"\n\n"),
 	)
 }
 
@@ -403,7 +403,10 @@ func unlink(pf flag.PassedFlags) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	help.ConditionallyEnableColor(pf, os.Stdout)
+	color, err := help.ConditionallyEnableColor(pf, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
+	}
 
 	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
 	if err != nil {
@@ -415,49 +418,49 @@ func unlink(pf flag.PassedFlags) error {
 		f := bufio.NewWriter(os.Stdout)
 
 		if len(fi.ignoredPaths) > 0 {
-			fPrintHeader(f, "Ignored paths:")
+			fPrintHeader(f, &color, "Ignored paths:")
 			for _, e := range fi.ignoredPaths {
-				fmt.Fprintf(f, "%s\n", e)
+				fmt.Fprintf(f, "%s\n", e.ColorString(&color))
 			}
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.dirLinksToCreate) > 0 {
-			fPrintHeader(f, "Uncreated dir links:")
-			fPrintLinkTs(f, fi.dirLinksToCreate)
+			fPrintHeader(f, &color, "Uncreated dir links:")
+			fPrintLinkTs(f, &color, fi.dirLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.fileLinksToCreate) > 0 {
-			fPrintHeader(f, "Uncreated file links:")
-			fPrintLinkTs(f, fi.fileLinksToCreate)
+			fPrintHeader(f, &color, "Uncreated file links:")
+			fPrintLinkTs(f, &color, fi.fileLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.existingDirLinks) > 0 {
-			fPrintHeader(f, "Dir links to delete:")
-			fPrintLinkTs(f, fi.existingDirLinks)
+			fPrintHeader(f, &color, "Dir links to delete:")
+			fPrintLinkTs(f, &color, fi.existingDirLinks)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.existingFileLinks) > 0 {
-			fPrintHeader(f, "File links to delete:")
-			fPrintLinkTs(f, fi.existingFileLinks)
+			fPrintHeader(f, &color, "File links to delete:")
+			fPrintLinkTs(f, &color, fi.existingFileLinks)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.pathErrs) > 0 {
-			fPrintErrorHeader(f, "Path errors:")
+			fPrintErrorHeader(f, &color, "Path errors:")
 			for _, e := range fi.pathErrs {
-				fmt.Fprintf(f, "%s\n", e)
+				fmt.Fprintf(f, "%s\n", e.ColorString(&color))
 			}
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.pathsErrs) > 0 {
-			fPrintErrorHeader(f, "Proposed link mismatch errors:")
+			fPrintErrorHeader(f, &color, "Proposed link mismatch errors:")
 			for _, e := range fi.pathsErrs {
-				fmt.Fprintf(f, "%s\n", e)
+				fmt.Fprintf(f, "%s\n", e.ColorString(&color))
 			}
 			fmt.Fprintln(f)
 		}
@@ -466,7 +469,7 @@ func unlink(pf flag.PassedFlags) error {
 	if len(fi.existingFileLinks) == 0 && len(fi.existingDirLinks) == 0 {
 		fmt.Print(
 			color.Add(
-				color.Bold+color.BrightForegroundGreen,
+				color.Bold+color.FgGreenBright,
 				"Nothing to do!\n",
 			),
 		)
@@ -484,7 +487,7 @@ func unlink(pf flag.PassedFlags) error {
 		if err == nil {
 			fmt.Print(
 				color.Add(
-					color.Bold+color.BrightForegroundGreen,
+					color.Bold+color.FgGreenBright,
 					"Dry run - no changes made\n",
 				),
 			)
@@ -506,7 +509,7 @@ func unlink(pf flag.PassedFlags) error {
 	}
 	fmt.Print(
 		color.Add(
-			color.Bold+color.BrightForegroundGreen,
+			color.Bold+color.FgGreenBright,
 			"Done!\n",
 		),
 	)
@@ -523,7 +526,10 @@ func link(pf flag.PassedFlags) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	help.ConditionallyEnableColor(pf, os.Stdout)
+	color, err := help.ConditionallyEnableColor(pf, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
+	}
 
 	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
 	if err != nil {
@@ -535,48 +541,48 @@ func link(pf flag.PassedFlags) error {
 		f := bufio.NewWriter(os.Stdout)
 
 		if len(fi.ignoredPaths) > 0 {
-			fPrintHeader(f, "Ignored paths:")
+			fPrintHeader(f, &color, "Ignored paths:")
 			for _, e := range fi.ignoredPaths {
-				fmt.Fprintf(f, "%s\n", e)
+				fmt.Fprintf(f, "%s\n", e.ColorString(&color))
 			}
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.dirLinksToCreate) > 0 {
-			fPrintHeader(f, "Dir links to create:")
-			fPrintLinkTs(f, fi.dirLinksToCreate)
+			fPrintHeader(f, &color, "Dir links to create:")
+			fPrintLinkTs(f, &color, fi.dirLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.fileLinksToCreate) > 0 {
-			fPrintHeader(f, "File links to create:")
-			fPrintLinkTs(f, fi.fileLinksToCreate)
+			fPrintHeader(f, &color, "File links to create:")
+			fPrintLinkTs(f, &color, fi.fileLinksToCreate)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.existingDirLinks) > 0 {
-			fPrintHeader(f, "Pre-existing correct dir links:")
-			fPrintLinkTs(f, fi.existingDirLinks)
+			fPrintHeader(f, &color, "Pre-existing correct dir links:")
+			fPrintLinkTs(f, &color, fi.existingDirLinks)
 			fmt.Fprintln(f)
 		}
 		if len(fi.existingFileLinks) > 0 {
-			fPrintHeader(f, "Pre-existing correct file links:")
-			fPrintLinkTs(f, fi.existingFileLinks)
+			fPrintHeader(f, &color, "Pre-existing correct file links:")
+			fPrintLinkTs(f, &color, fi.existingFileLinks)
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.pathErrs) > 0 {
-			fPrintErrorHeader(f, "Path errors:")
+			fPrintErrorHeader(f, &color, "Path errors:")
 			for _, e := range fi.pathErrs {
-				fmt.Fprintf(f, "%s\n", e)
+				fmt.Fprintf(f, "%s\n", e.ColorString(&color))
 			}
 			fmt.Fprintln(f)
 		}
 
 		if len(fi.pathsErrs) > 0 {
-			fPrintErrorHeader(f, "Proposed link mismatch errors:")
+			fPrintErrorHeader(f, &color, "Proposed link mismatch errors:")
 			for _, e := range fi.pathsErrs {
-				fmt.Fprintf(f, "%s\n", e)
+				fmt.Fprintf(f, "%s\n", e.ColorString(&color))
 			}
 			fmt.Fprintln(f)
 		}
@@ -586,7 +592,7 @@ func link(pf flag.PassedFlags) error {
 	if len(fi.fileLinksToCreate) == 0 && len(fi.dirLinksToCreate) == 0 {
 		fmt.Print(
 			color.Add(
-				color.Bold+color.BrightForegroundGreen,
+				color.Bold+color.FgGreenBright,
 				"Nothing to do!\n",
 			),
 		)
@@ -605,7 +611,7 @@ func link(pf flag.PassedFlags) error {
 		if err == nil {
 			fmt.Print(
 				color.Add(
-					color.Bold+color.BrightForegroundGreen,
+					color.Bold+color.FgGreenBright,
 					"Dry run - no changed made\n",
 				),
 			)
@@ -627,7 +633,7 @@ func link(pf flag.PassedFlags) error {
 	}
 	fmt.Print(
 		color.Add(
-			color.Bold+color.BrightForegroundGreen,
+			color.Bold+color.FgGreenBright,
 			"Done!\n",
 		),
 	)
