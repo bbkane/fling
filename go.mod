@@ -1,4 +1,4 @@
-module github.com/bbkane/fling
+module go.bbkane.com/fling
 
 go 1.17
 
