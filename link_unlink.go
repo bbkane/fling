@@ -10,10 +10,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bbkane/gocolor"
-	"github.com/bbkane/warg/flag"
-	"github.com/bbkane/warg/help"
 	"github.com/karrick/godirwalk"
+	"go.bbkane.com/gocolor"
+	"go.bbkane.com/warg/flag"
+	"go.bbkane.com/warg/help"
 )
 
 // checkMode for types of files we're not prepared to deal with :)

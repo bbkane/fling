@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"github.com/bbkane/warg/flag"
+	"go.bbkane.com/warg/flag"
 )
 
 // This will be overriden by goreleaser
