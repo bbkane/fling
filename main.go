@@ -72,6 +72,7 @@ func app() *warg.App {
 				flag.Default("auto"),
 			),
 		),
+		warg.SkipValidation(),
 	)
 	return &app
 }
