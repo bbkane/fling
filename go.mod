@@ -8,7 +8,7 @@ go 1.17
 require (
 	github.com/karrick/godirwalk v1.16.1
 	go.bbkane.com/gocolor v0.0.4
-	go.bbkane.com/warg v0.0.12
+	go.bbkane.com/warg v0.0.13
 )
 
 require (

@@ -10,7 +10,7 @@ import (
 	"go.bbkane.com/warg/value"
 )
 
-func main() {
+func app() *warg.App {
 	linkUnlinkFlags := flag.FlagMap{
 		"--ask": flag.New(
 			"Whether to ask before making changes",
@@ -45,7 +45,6 @@ func main() {
 	}
 
 	app := warg.New(
-		"fling",
 		section.New(
 			"Link and unlink directory heirarchies ",
 			section.Command(
@@ -74,5 +73,9 @@ func main() {
 			),
 		),
 	)
-	app.MustRun(os.Args, os.LookupEnv)
+	return &app
+}
+
+func main() {
+	app().MustRun(os.Args, os.LookupEnv)
 }
