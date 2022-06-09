@@ -1,9 +1,6 @@
 module go.bbkane.com/fling
 
-go 1.17
-
-// TODO: don't use this in prod
-// replace go.bbkane.com/warg => /Users/bbkane/Git/warg
+go 1.18
 
 require (
 	github.com/karrick/godirwalk v1.16.1
