@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"go.bbkane.com/warg/flag"
+	"go.bbkane.com/warg/command"
 )
 
 // This will be overriden by goreleaser
@@ -23,7 +23,7 @@ func getVersion() string {
 	return version
 }
 
-func printVersion(_ flag.PassedFlags) error {
+func printVersion(_ command.Context) error {
 	fmt.Println(getVersion())
 	return nil
 }

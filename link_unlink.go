@@ -12,7 +12,7 @@ import (
 
 	"github.com/karrick/godirwalk"
 	"go.bbkane.com/gocolor"
-	"go.bbkane.com/warg/flag"
+	"go.bbkane.com/warg/command"
 	"go.bbkane.com/warg/help"
 )
 
@@ -393,17 +393,17 @@ func askPrompt(ask string) (bool, error) {
 	}
 }
 
-func unlink(pf flag.PassedFlags) error {
-	ask := pf["--ask"].(string)
-	linkDir := pf["--link-dir"].(string)
-	srcDir := pf["--src-dir"].(string)
-	isDotfiles := pf["--dotfiles"].(bool)
+func unlink(ctx command.Context) error {
+	ask := ctx.Flags["--ask"].(string)
+	linkDir := ctx.Flags["--link-dir"].(string)
+	srcDir := ctx.Flags["--src-dir"].(string)
+	isDotfiles := ctx.Flags["--dotfiles"].(bool)
 	ignorePatterns := []string{}
-	if ignoreF, exists := pf["--ignore"]; exists {
+	if ignoreF, exists := ctx.Flags["--ignore"]; exists {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := help.ConditionallyEnableColor(pf, os.Stdout)
+	color, err := help.ConditionallyEnableColor(ctx.Flags, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
@@ -516,17 +516,17 @@ func unlink(pf flag.PassedFlags) error {
 	return nil
 }
 
-func link(pf flag.PassedFlags) error {
-	ask := pf["--ask"].(string)
-	linkDir := pf["--link-dir"].(string)
-	srcDir := pf["--src-dir"].(string)
-	isDotfiles := pf["--dotfiles"].(bool)
+func link(ctx command.Context) error {
+	ask := ctx.Flags["--ask"].(string)
+	linkDir := ctx.Flags["--link-dir"].(string)
+	srcDir := ctx.Flags["--src-dir"].(string)
+	isDotfiles := ctx.Flags["--dotfiles"].(bool)
 	ignorePatterns := []string{}
-	if ignoreF, exists := pf["--ignore"]; exists {
+	if ignoreF, exists := ctx.Flags["--ignore"]; exists {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := help.ConditionallyEnableColor(pf, os.Stdout)
+	color, err := help.ConditionallyEnableColor(ctx.Flags, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}

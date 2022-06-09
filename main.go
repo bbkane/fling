@@ -45,6 +45,7 @@ func app() *warg.App {
 	}
 
 	app := warg.New(
+		"fling",
 		section.New(
 			"Link and unlink directory heirarchies ",
 			section.Command(
@@ -71,6 +72,7 @@ func app() *warg.App {
 				flag.Alias("-c"),
 				flag.Default("auto"),
 			),
+			section.Footer("Homepage: https://github.com/bbkane/fling"),
 		),
 		warg.SkipValidation(),
 	)
