@@ -11,7 +11,7 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      # - windows  # I don't trust Windows for symlinks :)
+      - windows
       - darwin
     goarch:
       - amd64
