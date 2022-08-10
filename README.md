@@ -8,7 +8,14 @@ As a tradeoff, fling's codebase is simpler. fling compiles to a single binary an
 
 ## Install
 
-- Homebrew: `brew install bbkane/tap/fling`
+- [Homebrew](https://brew.sh/): `brew install bbkane/tap/fling`
+- [Scoop](https://scoop.sh/):
+
+```
+scoop bucket add bbkane https://github.com/bbkane/scoop-bucket
+scoop install bbkane/fling
+```
+
 - Download Mac/Linux executable: [GitHub releases](https://github.com/bbkane/fling/releases)
 - Go: `go install go.bbkane.com/fling@latest`
 - Build with [goreleaser](https://goreleaser.com/) after cloning: `goreleaser --snapshot --skip-publish --rm-dist`

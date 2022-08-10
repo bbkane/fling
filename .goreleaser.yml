@@ -6,6 +6,7 @@ before:
     - go mod download
     # you may remove this if you don't need go generate
     # - go generate ./...
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -28,6 +29,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
 # https://goreleaser.com/customization/homebrew/
 brews:
   - tap:
@@ -43,3 +45,14 @@ brews:
       See https://www.macworld.com/article/3140183/how-to-install-an-app-in-macos-sierra-thats-not-signed-by-a-developer.html to work around that
     homepage: "https://github.com/bbkane/fling"
     description: "GNU Stow alternative for dotfiles"
+
+# https://goreleaser.com/customization/scoop/
+scoop:
+  bucket:
+    owner: bbkane
+    name: scoop-bucket
+    token: "{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}"
+  description: "fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to GNU Stow. I use fling to manage my dotfiles"
+  homepage: "https://github.com/bbkane/fling"
+  license: MIT
+
