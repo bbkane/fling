@@ -1,0 +1,20 @@
+linters:
+  disable-all: false
+  enable:
+    # defaults
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    # stuff I'm adding
+    - exhaustive
+    - exhaustruct
+    - gochecknoglobals
+    - gochecknoinits
+    - gofmt
+    - nonamedreturns
+    - predeclared
+  fast: false

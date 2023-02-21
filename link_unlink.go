@@ -163,7 +163,15 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDot
 		return nil, fmt.Errorf("couldn't get abs path for srcDir: %w", err)
 	}
 
-	fi := fileInfo{}
+	fi := fileInfo{
+		dirLinksToCreate:  nil,
+		fileLinksToCreate: nil,
+		existingDirLinks:  nil,
+		existingFileLinks: nil,
+		pathErrs:          nil,
+		pathsErrs:         nil,
+		ignoredPaths:      nil,
+	}
 	linkPathReplacements := make(map[string]string)
 
 	err = godirwalk.Walk(srcDir, &godirwalk.Options{
@@ -354,9 +362,12 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDot
 			return godirwalk.SkipThis
 		},
 		// https://pkg.go.dev/github.com/karrick/godirwalk#Options
-		Unsorted:            true,
-		AllowNonDirectory:   false,
-		FollowSymbolicLinks: false,
+		Unsorted:             true,
+		AllowNonDirectory:    false,
+		FollowSymbolicLinks:  false,
+		ErrorCallback:        nil,
+		PostChildrenCallback: nil,
+		ScratchBuffer:        nil,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("walking error: %w", err)
