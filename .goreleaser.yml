@@ -6,49 +6,49 @@ before:
     - go mod download
     # you may remove this if you don't need go generate
     # - go generate ./...
+# https://goreleaser.com/customization/homebrew/
+brews:
+  - caveats: |
+      Unfortunately, Apple wants to charge developers $100/year to distribute
+      their apps without a big scary "... the developer cannot be verified"
+      warning. I'm not willing to pay that to give away free apps.
+      See https://www.macworld.com/article/3140183/how-to-install-an-app-in-macos-sierra-thats-not-signed-by-a-developer.html to work around that
+    description: GNU Stow alternative for dotfiles
+    folder: Formula
+    homepage: https://github.com/bbkane/fling
+    tap:
+      name: homebrew-tap
+      owner: bbkane
+      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
+      token: '{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}'
 builds:
   - env:
       - CGO_ENABLED=0
-    goos:
-      - linux
-      - windows
-      - darwin
     goarch:
       - amd64
       - arm
       - arm64
       # - i386  # does anyone care about i386?
+    goos:
+      - linux
+      - windows
+      - darwin
     ldflags:
       - -s -w -X main.version=v{{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
-checksum:
-  name_template: "checksums.txt"
 changelog:
-  sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
-# https://goreleaser.com/customization/homebrew/
-brews:
-  - tap:
-      owner: bbkane
-      name: homebrew-tap
-      # Optionally a token can be provided, if it differs from the token provided to GoReleaser
-      token: "{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}"
-    folder: Formula
-    caveats: |
-      Unfortunately, Apple wants to charge developers $100/year to distribute
-      their apps without a big scary "... the developer cannot be verified"
-      warning. I'm not willing to pay that to give away free apps.
-      See https://www.macworld.com/article/3140183/how-to-install-an-app-in-macos-sierra-thats-not-signed-by-a-developer.html to work around that
-    homepage: "https://github.com/bbkane/fling"
-    description: "GNU Stow alternative for dotfiles"
+      - '^docs:'
+      - '^test:'
+  sort: asc
+checksum:
+  name_template: checksums.txt
 # https://goreleaser.com/customization/scoop/
 scoop:
   bucket:
-    owner: bbkane
     name: scoop-bucket
-    token: "{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}"
-  description: "fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to GNU Stow. I use fling to manage my dotfiles"
-  homepage: "https://github.com/bbkane/fling"
+    owner: bbkane
+    token: '{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}'
+  description: fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to GNU Stow. I use fling to manage my dotfiles
+  homepage: https://github.com/bbkane/fling
   license: MIT
