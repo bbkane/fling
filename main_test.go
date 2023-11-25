@@ -2,10 +2,10 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildApp(t *testing.T) {
-	if err := app().Validate(); err != nil {
-		t.Fatal(err)
-	}
+	require.Nil(t, app().Validate())
 }
