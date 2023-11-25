@@ -13,7 +13,7 @@ import (
 	"github.com/karrick/godirwalk"
 	"go.bbkane.com/gocolor"
 	"go.bbkane.com/warg/command"
-	"go.bbkane.com/warg/help"
+	"go.bbkane.com/warg/help/common"
 )
 
 // checkMode for types of files we're not prepared to deal with :)
@@ -414,7 +414,7 @@ func unlink(ctx command.Context) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := help.ConditionallyEnableColor(ctx.Flags, os.Stdout)
+	color, err := common.ConditionallyEnableColor(ctx.Flags, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
@@ -537,7 +537,7 @@ func link(ctx command.Context) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := help.ConditionallyEnableColor(ctx.Flags, os.Stdout)
+	color, err := common.ConditionallyEnableColor(ctx.Flags, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
