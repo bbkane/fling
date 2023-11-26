@@ -9,6 +9,8 @@ import (
 	"go.bbkane.com/warg/value/slice"
 )
 
+var version string
+
 func app() *warg.App {
 	linkUnlinkFlags := flag.FlagMap{
 		"--ask": flag.New(
@@ -70,6 +72,7 @@ func app() *warg.App {
 			section.ExistingFlag("--color", warg.ColorFlag()),
 			section.Footer("Homepage: https://github.com/bbkane/fling"),
 		),
+		warg.OverrideVersion(version),
 		warg.SkipValidation(),
 	)
 	return &app

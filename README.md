@@ -1,5 +1,7 @@
 # fling
 
+![demo](./demo.gif)
+
 fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to [GNU Stow](https://www.gnu.org/software/stow/). I use fling to manage my [dotfiles](https://github.com/bbkane/dotfiles)
 
 fling is much dumber than GNU Stow - it's missing several options, only considers one directory at a time, and deals with absolute paths only (in contrast, GNU Stow works exclusively with relative paths).
@@ -19,10 +21,6 @@ scoop install bbkane/fling
 - Download Mac/Linux executable: [GitHub releases](https://github.com/bbkane/fling/releases)
 - Go: `go install go.bbkane.com/fling@latest`
 - Build with [goreleaser](https://goreleaser.com/) after cloning: `goreleaser --snapshot --skip-publish --rm-dist`
-
-## Example
-
-![demo](./demo.gif)
 
 ## Notes
 
