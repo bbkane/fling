@@ -6,7 +6,7 @@ fling computes and creates/removes the minimal amount of symlinks needed in a di
 
 fling is much dumber than GNU Stow - it's missing several options, only considers one directory at a time, and deals with absolute paths only (in contrast, GNU Stow works exclusively with relative paths).
 
-As a tradeoff, fling's codebase is simpler. fling compiles to a single binary and contains roughly 750 lines of Go code as of 2021-12-03. It's very easy to understand what fling will do for a particular invocation: fling prints out (in color!) what it plans to link/unlink and asks you (by default) before continuing. Finally, fling's `--dotfiles` option [works correctly](https://github.com/aspiers/stow/issues/33) (and is on by default).
+As a tradeoff, fling's codebase is simpler. fling compiles to a single binary and contains fewer lines of code. It's very easy to understand what fling will do for a particular invocation: fling prints out (in color!) what it plans to link/unlink and asks you (by default) before continuing. Finally, fling's `--dotfiles` option [works correctly](https://github.com/aspiers/stow/issues/33) (and is on by default).
 
 ## Install
 
@@ -23,10 +23,6 @@ scoop install bbkane/fling
 - Build with [goreleaser](https://goreleaser.com/) after cloning: `goreleaser --snapshot --skip-publish --rm-dist`
 
 ## Notes
-
-fling was built to manage my dotfiles, and it's only tested on those dotfiles. Please feel free to contribute tests.
-
----
 
 If you're migrating from GNU Stow, you may see an error similar to the following when you attempt to `fling link` something:
 
