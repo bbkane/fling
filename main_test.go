@@ -104,6 +104,28 @@ func TestBuildFileInfo(t *testing.T) {
 		expectedErr      bool
 	}{
 		{
+			name: "empty",
+			preExisting: preExisting{
+				srcChildDirs:   nil,
+				srcChildFiles:  nil,
+				linkChildDirs:  nil,
+				linkChildFiles: nil,
+				links:          nil,
+			},
+			ignorePatterns: nil,
+			isDotFiles:     false,
+			expectedFileInfo: fileInfo{
+				dirLinksToCreate:  nil,
+				fileLinksToCreate: nil,
+				existingDirLinks:  nil,
+				existingFileLinks: nil,
+				pathErrs:          nil,
+				pathsErrs:         nil,
+				ignoredPaths:      nil,
+			},
+			expectedErr: false,
+		},
+		{
 			name: "file",
 			preExisting: preExisting{
 				srcChildDirs:   nil,
@@ -192,6 +214,59 @@ func TestBuildFileInfo(t *testing.T) {
 				pathErrs:          nil,
 				pathsErrs:         nil,
 				ignoredPaths:      []ignoredPath{"README.md"},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "dotfile_git_link",
+			preExisting: preExisting{
+				srcChildDirs:   []string{"dot-config"},
+				srcChildFiles:  []string{"README.md", "dot-gitconfig", "dot-config/file.txt"},
+				linkChildDirs:  []string{".config"},
+				linkChildFiles: nil,
+				links:          nil,
+			},
+			ignorePatterns: []string{"README.*"},
+			isDotFiles:     true,
+			expectedFileInfo: fileInfo{
+				dirLinksToCreate: nil,
+				fileLinksToCreate: []linkT{
+					{src: "dot-config/file.txt", link: ".config/file.txt"},
+					{src: "dot-gitconfig", link: ".gitconfig"},
+				},
+				existingDirLinks:  nil,
+				existingFileLinks: nil,
+				pathErrs:          nil,
+				pathsErrs:         nil,
+				ignoredPaths:      []ignoredPath{"README.md"},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "dotfile_git_unlink",
+			preExisting: preExisting{
+				srcChildDirs:   []string{"dot-config"},
+				srcChildFiles:  []string{"README.md", "dot-gitconfig", "dot-config/file.txt"},
+				linkChildDirs:  []string{".config"},
+				linkChildFiles: nil,
+				links: []linkT{
+					{src: "dot-config/file.txt", link: ".config/file.txt"},
+					{src: "dot-gitconfig", link: ".gitconfig"},
+				},
+			},
+			ignorePatterns: []string{"README.*"},
+			isDotFiles:     true,
+			expectedFileInfo: fileInfo{
+				dirLinksToCreate:  nil,
+				fileLinksToCreate: nil,
+				existingDirLinks:  nil,
+				existingFileLinks: []linkT{
+					{src: "dot-config/file.txt", link: ".config/file.txt"},
+					{src: "dot-gitconfig", link: ".gitconfig"},
+				},
+				pathErrs:     nil,
+				pathsErrs:    nil,
+				ignoredPaths: []ignoredPath{"README.md"},
 			},
 			expectedErr: false,
 		},
