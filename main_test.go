@@ -21,7 +21,7 @@ type preExisting struct {
 	links []linkT
 }
 
-func createPreExistingDirsAndFiles(t testing.TB, p preExisting) (string, string) {
+func createPreExisting(t testing.TB, p preExisting) (string, string) {
 	t.Helper()
 
 	tmpDir, err := os.MkdirTemp("", "fling")
@@ -151,12 +151,56 @@ func TestBuildFileInfo(t *testing.T) {
 			},
 			expectedErr: false,
 		},
+		{
+			name: "dotfile_bin_common_link",
+			preExisting: preExisting{
+				srcChildDirs:   []string{"bin_common"},
+				srcChildFiles:  []string{"README.md", "bin_common/file.txt"},
+				linkChildDirs:  nil,
+				linkChildFiles: nil,
+				links:          nil,
+			},
+			ignorePatterns: []string{"README.*"},
+			isDotFiles:     true,
+			expectedFileInfo: fileInfo{
+				dirLinksToCreate:  []linkT{{src: "bin_common", link: "bin_common"}},
+				fileLinksToCreate: nil,
+				existingDirLinks:  nil,
+				existingFileLinks: nil,
+				pathErrs:          nil,
+				pathsErrs:         nil,
+				ignoredPaths:      []ignoredPath{"README.md"},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "dotfile_bin_common_unlink",
+			preExisting: preExisting{
+				srcChildDirs:   []string{"bin_common"},
+				srcChildFiles:  []string{"README.md", "bin_common/file.txt"},
+				linkChildDirs:  nil,
+				linkChildFiles: nil,
+				links:          []linkT{{src: "bin_common", link: "bin_common"}},
+			},
+			ignorePatterns: []string{"README.*"},
+			isDotFiles:     true,
+			expectedFileInfo: fileInfo{
+				dirLinksToCreate:  nil,
+				fileLinksToCreate: nil,
+				existingDirLinks:  []linkT{{src: "bin_common", link: "bin_common"}},
+				existingFileLinks: nil,
+				pathErrs:          nil,
+				pathsErrs:         nil,
+				ignoredPaths:      []ignoredPath{"README.md"},
+			},
+			expectedErr: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			srcDir, linkDir := createPreExistingDirsAndFiles(t, tt.preExisting)
+			srcDir, linkDir := createPreExisting(t, tt.preExisting)
 
 			absPathExpectedFileInfo(t, srcDir, linkDir, &tt.expectedFileInfo)
 
