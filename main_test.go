@@ -17,6 +17,8 @@ type preExisting struct {
 	srcChildFiles  []string
 	linkChildDirs  []string
 	linkChildFiles []string
+	// links from srcDir to linkDir
+	links []linkT
 }
 
 func createPreExistingDirsAndFiles(t testing.TB, p preExisting) (string, string) {
@@ -51,6 +53,13 @@ func createPreExistingDirsAndFiles(t testing.TB, p preExisting) (string, string)
 
 	for _, linkChildFile := range p.linkChildFiles {
 		err = os.WriteFile(filepath.Join(linkDir, linkChildFile), []byte("hello\n"), 0644)
+		require.NoError(t, err)
+	}
+
+	for _, l := range p.links {
+		src := filepath.Join(srcDir, l.src)
+		link := filepath.Join(linkDir, l.link)
+		err = os.Symlink(src, link)
 		require.NoError(t, err)
 	}
 
@@ -101,6 +110,7 @@ func TestBuildFileInfo(t *testing.T) {
 				srcChildFiles:  []string{"file.txt"},
 				linkChildDirs:  nil,
 				linkChildFiles: nil,
+				links:          nil,
 			},
 			ignorePatterns: nil,
 			isDotFiles:     false,
@@ -112,6 +122,32 @@ func TestBuildFileInfo(t *testing.T) {
 				pathErrs:          nil,
 				pathsErrs:         nil,
 				ignoredPaths:      nil,
+			},
+			expectedErr: false,
+		},
+		{
+			name: "fileLinked",
+			preExisting: preExisting{
+				srcChildDirs:   nil,
+				srcChildFiles:  []string{"file.txt"},
+				linkChildDirs:  nil,
+				linkChildFiles: nil,
+				links: []linkT{
+					{src: "file.txt", link: "file.txt"},
+				},
+			},
+			ignorePatterns: nil,
+			isDotFiles:     false,
+			expectedFileInfo: fileInfo{
+				dirLinksToCreate:  nil,
+				fileLinksToCreate: nil,
+				existingDirLinks:  nil,
+				existingFileLinks: []linkT{
+					{src: "file.txt", link: "file.txt"},
+				},
+				pathErrs:     nil,
+				pathsErrs:    nil,
+				ignoredPaths: nil,
 			},
 			expectedErr: false,
 		},
