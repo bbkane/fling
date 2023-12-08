@@ -6,7 +6,7 @@ toolchain go1.21.4
 
 require (
 	github.com/karrick/godirwalk v1.16.1
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	go.bbkane.com/gocolor v0.0.5
 	go.bbkane.com/warg v0.0.21
 )
