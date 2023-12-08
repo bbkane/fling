@@ -15,6 +15,7 @@ linters:
     - gochecknoglobals
     - gochecknoinits
     - gofmt
+    - goimports
     - nonamedreturns
     - predeclared
   fast: false
