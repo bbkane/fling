@@ -16,7 +16,7 @@ brews:
     description: GNU Stow alternative for dotfiles
     folder: Formula
     homepage: https://github.com/bbkane/fling
-    tap:
+    repository:
       name: homebrew-tap
       owner: bbkane
       # Optionally a token can be provided, if it differs from the token provided to GoReleaser
@@ -43,12 +43,11 @@ changelog:
   sort: asc
 checksum:
   name_template: checksums.txt
-# https://goreleaser.com/customization/scoop/
-scoop:
-  bucket:
-    name: scoop-bucket
-    owner: bbkane
-    token: '{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}'
-  description: fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to GNU Stow. I use fling to manage my dotfiles
-  homepage: https://github.com/bbkane/fling
-  license: MIT
+scoops:
+  - description: fling computes and creates/removes the minimal amount of symlinks needed in a directory to refer to files and directories in another directory, similar to GNU Stow. I use fling to manage my dotfiles
+    homepage: https://github.com/bbkane/fling
+    license: MIT
+    repository:
+      name: scoop-bucket
+      owner: bbkane
+      token: '{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}'
