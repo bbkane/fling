@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"cmp"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/karrick/godirwalk"
@@ -120,12 +122,12 @@ func (t ignoredPath) ColorString(color *gocolor.Color) string {
 
 type fileInfo struct {
 	dirLinksToCreate  []dirLinkToCreate
-	fileLinksToCreate []fileLinkToCreate
 	existingDirLinks  []existingDirLink
 	existingFileLinks []existingFileLink
+	fileLinksToCreate []fileLinkToCreate
+	ignoredPaths      []ignoredPath
 	pathErrs          []pathErr
 	pathsErrs         []pathsErr
-	ignoredPaths      []ignoredPath
 }
 
 func fPrintHeader(f *bufio.Writer, color *gocolor.Color, header string) {
@@ -372,6 +374,38 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDot
 	if err != nil {
 		return nil, fmt.Errorf("walking error: %w", err)
 	}
+
+	// sort all fields so all traversals of the same directory
+	// produce the same struct - needed for tests
+
+	// https://pkg.go.dev/slices#example-SortFunc-MultiField
+	compareLinks := func(a, b linkT) int {
+		if n := cmp.Compare(a.link, b.link); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.src, b.src)
+	}
+
+	slices.SortFunc(fi.dirLinksToCreate, compareLinks)
+	slices.SortFunc(fi.existingDirLinks, compareLinks)
+	slices.SortFunc(fi.existingFileLinks, compareLinks)
+	slices.SortFunc(fi.fileLinksToCreate, compareLinks)
+	slices.Sort(fi.ignoredPaths)
+	slices.SortFunc(fi.pathErrs, func(a, b pathErr) int {
+		if n := cmp.Compare(a.path, b.path); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.err.Error(), b.err.Error())
+	})
+	slices.SortFunc(fi.pathsErrs, func(a pathsErr, b pathsErr) int {
+		if n := cmp.Compare(a.link, b.link); n != 0 {
+			return n
+		}
+		if n := cmp.Compare(a.src, b.src); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.err.Error(), b.err.Error())
+	})
 
 	return &fi, nil
 
