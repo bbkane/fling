@@ -16,6 +16,9 @@ jobs:
           # requires go.sum file (i.e., external libraries)
           cache: true
           go-version-file: go.mod
+      - name: Write Release Notes
+        # https://github.com/bbkane/{repo-name}/blob/master/CHANGELOG.md
+        run: echo 'See [CHANGELOG.md](${{ github.server_url }}/${{ github.repository }}/blob/master/CHANGELOG.md) for changes.' > tmp_release_notes.md
       # https://github.com/marketplace/actions/goreleaser-action
       - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -23,7 +26,7 @@ jobs:
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --rm-dist
+          args: release --clean --release-notes tmp_release_notes.md
           version: latest
 name: Release
 on: # yamllint disable-line rule:truthy
