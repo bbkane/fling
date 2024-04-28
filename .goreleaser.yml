@@ -14,7 +14,7 @@ brews:
       warning. I'm not willing to pay that to give away free apps.
       See https://www.macworld.com/article/3140183/how-to-install-an-app-in-macos-sierra-thats-not-signed-by-a-developer.html to work around that
     description: GNU Stow alternative for dotfiles
-    folder: Formula
+    directory: Formula
     homepage: https://github.com/bbkane/fling
     repository:
       name: homebrew-tap
