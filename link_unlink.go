@@ -16,6 +16,7 @@ import (
 	"go.bbkane.com/gocolor"
 	"go.bbkane.com/warg/command"
 	"go.bbkane.com/warg/help/common"
+	"go.bbkane.com/warg/path"
 )
 
 // checkMode for types of files we're not prepared to deal with :)
@@ -440,8 +441,8 @@ func askPrompt(ask string) (bool, error) {
 
 func unlink(ctx command.Context) error {
 	ask := ctx.Flags["--ask"].(string)
-	linkDir := ctx.Flags["--link-dir"].(string)
-	srcDir := ctx.Flags["--src-dir"].(string)
+	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
+	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
 	isDotfiles := ctx.Flags["--dotfiles"].(bool)
 	ignorePatterns := []string{}
 	if ignoreF, exists := ctx.Flags["--ignore"]; exists {
@@ -563,8 +564,8 @@ func unlink(ctx command.Context) error {
 
 func link(ctx command.Context) error {
 	ask := ctx.Flags["--ask"].(string)
-	linkDir := ctx.Flags["--link-dir"].(string)
-	srcDir := ctx.Flags["--src-dir"].(string)
+	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
+	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
 	isDotfiles := ctx.Flags["--dotfiles"].(bool)
 	ignorePatterns := []string{}
 	if ignoreF, exists := ctx.Flags["--ignore"]; exists {
