@@ -66,7 +66,7 @@ func createPreExisting(t testing.TB, p preExisting) (string, string) {
 	return srcDir, linkDir
 }
 
-func absPathExpectedFileInfo(t testing.TB, srcDir string, linkDir string, fi *fileInfo) {
+func absPathExpectedFileInfo(srcDir string, linkDir string, fi *fileInfo) {
 
 	for i, d := range fi.dirLinksToCreate {
 		fi.dirLinksToCreate[i].src = filepath.Join(srcDir, d.src)
@@ -277,7 +277,7 @@ func TestBuildFileInfo(t *testing.T) {
 
 			srcDir, linkDir := createPreExisting(t, tt.preExisting)
 
-			absPathExpectedFileInfo(t, srcDir, linkDir, &tt.expectedFileInfo)
+			absPathExpectedFileInfo(srcDir, linkDir, &tt.expectedFileInfo)
 
 			actualFileInfo, actualErr := buildFileInfo(srcDir, linkDir, tt.ignorePatterns, tt.isDotFiles)
 

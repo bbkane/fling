@@ -4,6 +4,7 @@ import (
 	"go.bbkane.com/warg"
 	"go.bbkane.com/warg/command"
 	"go.bbkane.com/warg/flag"
+	"go.bbkane.com/warg/path"
 	"go.bbkane.com/warg/section"
 	"go.bbkane.com/warg/value/scalar"
 	"go.bbkane.com/warg/value/slice"
@@ -39,7 +40,7 @@ func app() *warg.App {
 		"--link-dir": flag.New(
 			"Symlinks will be created in this directory pointing to files/directories in --src-dir",
 			scalar.Path(
-				scalar.Default("~"),
+				scalar.Default(path.New("~")),
 			),
 			flag.Alias("-l"),
 			flag.Required(),
@@ -69,9 +70,9 @@ func app() *warg.App {
 				command.ExistingFlags(linkUnlinkFlags),
 			),
 			section.ExistingCommand("version", warg.VersionCommand()),
-			section.ExistingFlag("--color", warg.ColorFlag()),
 			section.Footer("Homepage: https://github.com/bbkane/fling"),
 		),
+		warg.ExistingGlobalFlag("--color", warg.ColorFlag()),
 		warg.OverrideVersion(version),
 		warg.SkipValidation(),
 	)
