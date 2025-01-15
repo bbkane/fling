@@ -1,3 +1,6 @@
+.DS_Store
+__debug_bin*
 dist/
 fling
 fling.exe
+tmp*

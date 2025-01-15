@@ -51,3 +51,4 @@ scoops:
       name: scoop-bucket
       owner: bbkane
       token: '{{ .Env.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}'
+version: 2
