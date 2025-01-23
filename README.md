@@ -6,7 +6,7 @@ fling computes and creates/removes the minimal amount of symlinks needed in a di
 
 fling is much dumber than GNU Stow - it's missing several options, only considers one directory at a time, and deals with absolute paths only (in contrast, GNU Stow works exclusively with relative paths).
 
-As a tradeoff, fling's codebase is simpler. fling compiles to a single binary and contains fewer lines of code. It's very easy to understand what fling will do for a particular invocation: fling prints out (in color!) what it plans to link/unlink and asks you (by default) before continuing. Finally, fling's `--dotfiles` option [works correctly](https://github.com/aspiers/stow/issues/33) (and is on by default).
+As a tradeoff, fling's codebase is simpler. fling compiles to a single binary and contains fewer lines of code. It's very easy to understand what fling will do for a particular invocation: fling prints out (in color!) what it plans to link/unlink and asks you (by default) before continuing.
 
 ## Install
 
