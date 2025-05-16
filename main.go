@@ -8,12 +8,13 @@ import (
 	"go.bbkane.com/warg/section"
 	"go.bbkane.com/warg/value/scalar"
 	"go.bbkane.com/warg/value/slice"
+	"go.bbkane.com/warg/wargcore"
 )
 
 var version string
 
-func app() *warg.App {
-	linkUnlinkFlags := flag.FlagMap{
+func app() *wargcore.App {
+	linkUnlinkFlags := wargcore.FlagMap{
 		"--ask": flag.New(
 			"Whether to ask before making changes",
 			scalar.String(
@@ -55,30 +56,31 @@ func app() *warg.App {
 
 	app := warg.New(
 		"fling",
+		version,
 		section.New(
 			"Link and unlink directory heirarchies ",
-			section.Command(
+			section.NewCommand(
 				"link",
 				"Create links",
 				link,
-				command.ExistingFlags(linkUnlinkFlags),
+				command.FlagMap(linkUnlinkFlags),
 			),
-			section.Command(
+			section.NewCommand(
 				"unlink",
 				"Unlink previously created links",
 				unlink,
-				command.ExistingFlags(linkUnlinkFlags),
+				command.FlagMap(linkUnlinkFlags),
 			),
-			section.ExistingCommand("version", warg.VersionCommand()),
+			section.CommandMap(warg.VersionCommandMap()),
 			section.Footer("Homepage: https://github.com/bbkane/fling"),
 		),
-		warg.ExistingGlobalFlag("--color", warg.ColorFlag()),
-		warg.OverrideVersion(version),
+		warg.GlobalFlagMap(warg.ColorFlagMap()),
 		warg.SkipValidation(),
 	)
 	return &app
 }
 
 func main() {
-	app().MustRun()
+	app := app()
+	app.MustRun()
 }

@@ -14,9 +14,9 @@ import (
 
 	"github.com/karrick/godirwalk"
 	"go.bbkane.com/gocolor"
-	"go.bbkane.com/warg/command"
 	"go.bbkane.com/warg/help/common"
 	"go.bbkane.com/warg/path"
+	"go.bbkane.com/warg/wargcore"
 )
 
 // checkMode for types of files we're not prepared to deal with :)
@@ -439,7 +439,7 @@ func askPrompt(ask string) (bool, error) {
 	}
 }
 
-func unlink(ctx command.Context) error {
+func unlink(ctx wargcore.Context) error {
 	ask := ctx.Flags["--ask"].(string)
 	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
 	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
@@ -562,7 +562,7 @@ func unlink(ctx command.Context) error {
 	return nil
 }
 
-func link(ctx command.Context) error {
+func link(ctx wargcore.Context) error {
 	ask := ctx.Flags["--ask"].(string)
 	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
 	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
