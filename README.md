@@ -8,6 +8,10 @@ fling is much dumber than GNU Stow - it's missing several options, only consider
 
 As a tradeoff, fling's codebase is simpler. fling compiles to a single binary and contains fewer lines of code. It's very easy to understand what fling will do for a particular invocation: fling prints out (in color!) what it plans to link/unlink and asks you (by default) before continuing.
 
+## Project Status (2025-06-14)
+
+Basically complete! I use `fling` for my dotfiles, which seems to work great; and I'm happy with the balance between features and simplicity. I'm watching issues; please open one for any questions and especially BEFORE submitting a Pull request.
+
 ## Install
 
 - [Homebrew](https://brew.sh/): `brew install bbkane/tap/fling`
@@ -20,7 +24,7 @@ scoop install bbkane/fling
 
 - Download Mac/Linux executable: [GitHub releases](https://github.com/bbkane/fling/releases)
 - Go: `go install go.bbkane.com/fling@latest`
-- Build with [goreleaser](https://goreleaser.com/) after cloning: `goreleaser --snapshot --skip-publish --rm-dist`
+- Build with [goreleaser](https://goreleaser.com/) after cloning: `goreleaser release --snapshot --clean`
 
 ## Notes
 
@@ -35,3 +39,5 @@ Proposed link mismatch errors:
 ```
 
 This is because GNU Stow works with relative symlinks and fling works with absolute symlinks. Either unstow your directory (`stow -D`) or manually erase the symlink: `unlink /Users/bbkane/.sqliterc`
+
+See [Go Project Notes](https://www.bbkane.com/blog/go-project-notes/) for notes on development tooling.
