@@ -9,6 +9,7 @@ import (
 )
 
 func TestBuildApp(t *testing.T) {
+	t.Parallel()
 	require.Nil(t, app().Validate())
 }
 
@@ -95,6 +96,8 @@ func absPathExpectedFileInfo(srcDir string, linkDir string, fi *fileInfo) {
 }
 
 func TestBuildFileInfo(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		preExisting      preExisting
@@ -274,6 +277,7 @@ func TestBuildFileInfo(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			srcDir, linkDir := createPreExisting(t, tt.preExisting)
 
