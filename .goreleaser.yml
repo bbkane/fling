@@ -16,6 +16,9 @@ brews:
     description: GNU Stow alternative for dotfiles
     directory: Formula
     homepage: https://github.com/bbkane/fling
+    install: |
+      bin.install "fling"
+      generate_completions_from_executable(bin/"fling", "completion", shells: [:zsh])
     repository:
       name: homebrew-tap
       owner: bbkane

@@ -6,27 +6,25 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     steps:
-      # https://github.com/marketplace/actions/checkout`
+      # https://github.com/marketplace/actions/checkout
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       # https://github.com/marketplace/actions/setup-go-environment
       - name: Set up Go 1.x >= 1.18
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           # requires go.sum file (i.e., external libraries)
-          cache: true
           go-version-file: go.mod
       - name: Write Release Notes
-        # https://github.com/bbkane/{repo-name}/blob/master/CHANGELOG.md
-        run: echo 'See [CHANGELOG.md](${{ github.server_url }}/${{ github.repository }}/blob/master/CHANGELOG.md) for changes.' > tmp_release_notes.md
+        run: echo 'See [CHANGELOG](${{ github.server_url }}/${{ github.repository }}/blob/master/CHANGELOG.md)' > /tmp/release_notes.md
       # https://github.com/marketplace/actions/goreleaser-action
       - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP: ${{ secrets.KEY_GITHUB_GORELEASER_TO_HOMEBREW_TAP }}
         name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v6
         with:
-          args: release --clean --release-notes tmp_release_notes.md
+          args: release --clean --release-notes /tmp/release_notes.md
           version: latest
 name: Release
 on: # yamllint disable-line rule:truthy
