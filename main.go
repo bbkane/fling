@@ -3,6 +3,7 @@ package main
 import (
 	"go.bbkane.com/warg"
 	"go.bbkane.com/warg/command"
+	"go.bbkane.com/warg/completion"
 	"go.bbkane.com/warg/flag"
 	"go.bbkane.com/warg/path"
 	"go.bbkane.com/warg/section"
@@ -44,12 +45,24 @@ func app() *wargcore.App {
 				scalar.Default(path.New("~")),
 			),
 			flag.Alias("-l"),
+			flag.CompletionCandidates(func(ctx wargcore.Context) (*completion.Candidates, error) {
+				return &completion.Candidates{
+					Type:   completion.Type_Directories,
+					Values: nil,
+				}, nil
+			}),
 			flag.Required(),
 		),
 		"--src-dir": flag.New(
 			"Directory containing files and directories to link to",
 			scalar.Path(),
 			flag.Alias("-s"),
+			flag.CompletionCandidates(func(ctx wargcore.Context) (*completion.Candidates, error) {
+				return &completion.Candidates{
+					Type:   completion.Type_Directories,
+					Values: nil,
+				}, nil
+			}),
 			flag.Required(),
 		),
 	}

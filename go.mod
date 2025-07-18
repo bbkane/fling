@@ -6,7 +6,7 @@ require (
 	github.com/karrick/godirwalk v1.17.0
 	github.com/stretchr/testify v1.10.0
 	go.bbkane.com/gocolor v0.0.5
-	go.bbkane.com/warg v0.0.31
+	go.bbkane.com/warg v0.0.33
 )
 
 require (
@@ -16,6 +16,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
