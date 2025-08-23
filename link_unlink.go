@@ -14,9 +14,9 @@ import (
 
 	"github.com/karrick/godirwalk"
 	"go.bbkane.com/gocolor"
-	"go.bbkane.com/warg/help/common"
+	"go.bbkane.com/warg"
+
 	"go.bbkane.com/warg/path"
-	"go.bbkane.com/warg/wargcore"
 )
 
 // checkMode for types of files we're not prepared to deal with :)
@@ -439,7 +439,7 @@ func askPrompt(ask string) (bool, error) {
 	}
 }
 
-func unlink(ctx wargcore.Context) error {
+func unlink(ctx warg.CmdContext) error {
 	ask := ctx.Flags["--ask"].(string)
 	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
 	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
@@ -449,7 +449,7 @@ func unlink(ctx wargcore.Context) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := common.ConditionallyEnableColor(ctx.Flags, os.Stdout)
+	color, err := warg.ConditionallyEnableColor(ctx.Flags, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
@@ -562,7 +562,7 @@ func unlink(ctx wargcore.Context) error {
 	return nil
 }
 
-func link(ctx wargcore.Context) error {
+func link(ctx warg.CmdContext) error {
 	ask := ctx.Flags["--ask"].(string)
 	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
 	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
@@ -572,7 +572,7 @@ func link(ctx wargcore.Context) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := common.ConditionallyEnableColor(ctx.Flags, os.Stdout)
+	color, err := warg.ConditionallyEnableColor(ctx.Flags, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}

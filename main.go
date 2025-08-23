@@ -2,92 +2,75 @@ package main
 
 import (
 	"go.bbkane.com/warg"
-	"go.bbkane.com/warg/command"
-	"go.bbkane.com/warg/completion"
-	"go.bbkane.com/warg/flag"
 	"go.bbkane.com/warg/path"
-	"go.bbkane.com/warg/section"
 	"go.bbkane.com/warg/value/scalar"
 	"go.bbkane.com/warg/value/slice"
-	"go.bbkane.com/warg/wargcore"
 )
 
 var version string
 
-func app() *wargcore.App {
-	linkUnlinkFlags := wargcore.FlagMap{
-		"--ask": flag.New(
+func app() *warg.App {
+	linkUnlinkFlags := warg.FlagMap{
+		"--ask": warg.NewFlag(
 			"Whether to ask before making changes",
 			scalar.String(
 				scalar.Choices("true", "false", "dry-run"),
 				scalar.Default("true"),
 			),
-			flag.Required(),
+			warg.Required(),
 		),
-		"--dotfiles": flag.New(
+		"--dotfiles": warg.NewFlag(
 			"Files/dirs starting with 'dot-' will have links starting with '.'",
 			scalar.Bool(
 				scalar.Default(true),
 			),
-			flag.Required(),
+			warg.Required(),
 		),
-		"--ignore": flag.New(
+		"--ignore": warg.NewFlag(
 			"Ignore file/dir if the name (not the whole path) matches passed regex",
 			slice.String(
 				slice.Default([]string{"README.*"}),
 			),
-			flag.Alias("-i"),
-			flag.UnsetSentinel("UNSET"),
+			warg.Alias("-i"),
+			warg.UnsetSentinel("UNSET"),
 		),
-		"--link-dir": flag.New(
+		"--link-dir": warg.NewFlag(
 			"Symlinks will be created in this directory pointing to files/directories in --src-dir",
 			scalar.Path(
 				scalar.Default(path.New("~")),
 			),
-			flag.Alias("-l"),
-			flag.CompletionCandidates(func(ctx wargcore.Context) (*completion.Candidates, error) {
-				return &completion.Candidates{
-					Type:   completion.Type_Directories,
-					Values: nil,
-				}, nil
-			}),
-			flag.Required(),
+			warg.Alias("-l"),
+			warg.FlagCompletions(warg.CompletionsDirectories()),
+			warg.Required(),
 		),
-		"--src-dir": flag.New(
+		"--src-dir": warg.NewFlag(
 			"Directory containing files and directories to link to",
 			scalar.Path(),
-			flag.Alias("-s"),
-			flag.CompletionCandidates(func(ctx wargcore.Context) (*completion.Candidates, error) {
-				return &completion.Candidates{
-					Type:   completion.Type_Directories,
-					Values: nil,
-				}, nil
-			}),
-			flag.Required(),
+			warg.Alias("-s"),
+			warg.FlagCompletions(warg.CompletionsDirectories()),
+			warg.Required(),
 		),
 	}
 
 	app := warg.New(
 		"fling",
 		version,
-		section.New(
+		warg.NewSection(
 			"Link and unlink directory heirarchies ",
-			section.NewCommand(
+			warg.NewSubCmd(
 				"link",
 				"Create links",
 				link,
-				command.FlagMap(linkUnlinkFlags),
+				warg.CmdFlagMap(linkUnlinkFlags),
 			),
-			section.NewCommand(
+			warg.NewSubCmd(
 				"unlink",
 				"Unlink previously created links",
 				unlink,
-				command.FlagMap(linkUnlinkFlags),
+				warg.CmdFlagMap(linkUnlinkFlags),
 			),
-			section.CommandMap(warg.VersionCommandMap()),
-			section.Footer("Homepage: https://github.com/bbkane/fling"),
+			warg.SectionFooter("Homepage: https://github.com/bbkane/fling"),
 		),
-		warg.GlobalFlagMap(warg.ColorFlagMap()),
 		warg.SkipValidation(),
 	)
 	return &app
