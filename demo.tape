@@ -13,9 +13,17 @@ Set Height 650
 Set Width 1050
 Set Padding 50
 
-# https://github.com/charmbracelet/vhs/issues/39#issuecomment-1296334921
 Hide
-Sleep 600ms
+
+Type 'setopt interactive_comments'
+Enter
+
+Type 'source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh'
+Enter
+
+Type 'clear'
+Enter
+
 Show
 
 Type "cd ~/Git-GH/dotfiles"
@@ -28,7 +36,7 @@ Sleep 200ms
 Enter
 Sleep 1s
 
-Type "fling -s grabbit -i 'README.*' link"
+Type "fling link --src-dir grabbit"
 Sleep 200ms
 Enter
 Sleep 500ms
@@ -37,7 +45,7 @@ Sleep 500ms
 Enter
 Sleep 1s
 
-Type "fling -s grabbit -i 'README.*' --ask false unlink"
+Type "fling unlink --src-dir grabbit --ask false"
 Sleep 200ms
 Enter
 Sleep 1s
