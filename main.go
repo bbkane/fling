@@ -44,8 +44,8 @@ func app() *warg.App {
 			warg.Required(),
 		),
 		"--src-dir": warg.NewFlag(
-			"Directory containing files and directories to link to",
-			scalar.Path(),
+			"Directory containing files and directories to link to. Pass multiple times to link from multiple directories.",
+			slice.Path(),
 			warg.Alias("-s"),
 			warg.FlagCompletions(warg.CompletionsDirectories()),
 			warg.Required(),

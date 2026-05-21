@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -283,7 +285,7 @@ func TestBuildFileInfo(t *testing.T) {
 
 			absPathExpectedFileInfo(srcDir, linkDir, &tt.expectedFileInfo)
 
-			actualFileInfo, actualErr := buildFileInfo(srcDir, linkDir, tt.ignorePatterns, tt.isDotFiles)
+			actualFileInfo, actualErr := buildCombinedFileInfo([]string{srcDir}, linkDir, tt.ignorePatterns, tt.isDotFiles)
 
 			if tt.expectedErr {
 				require.Error(t, actualErr)
@@ -294,4 +296,164 @@ func TestBuildFileInfo(t *testing.T) {
 
 		})
 	}
+}
+
+type srcSetup struct {
+	childDirs  []string
+	childFiles []string
+}
+
+func createPreExistingMulti(t testing.TB, srcSetups []srcSetup, linkChildDirs []string, linkChildFiles []string) ([]string, string) {
+	t.Helper()
+
+	tmpDir, err := os.MkdirTemp("", "fling")
+	require.NoError(t, err)
+	t.Log("tmpDir:", tmpDir)
+
+	linkDir := filepath.Join(tmpDir, "link")
+	err = os.Mkdir(linkDir, 0755)
+	require.NoError(t, err)
+
+	for _, linkChildDir := range linkChildDirs {
+		err = os.Mkdir(filepath.Join(linkDir, linkChildDir), 0755)
+		require.NoError(t, err)
+	}
+	for _, linkChildFile := range linkChildFiles {
+		err = os.WriteFile(filepath.Join(linkDir, linkChildFile), []byte("hello\n"), 0644)
+		require.NoError(t, err)
+	}
+
+	srcDirs := make([]string, len(srcSetups))
+	for i, setup := range srcSetups {
+		srcDir := filepath.Join(tmpDir, filepath.Join("src", filepath.FromSlash(fmt.Sprintf("%d", i))))
+		err = os.MkdirAll(srcDir, 0755)
+		require.NoError(t, err)
+		srcDirs[i] = srcDir
+
+		for _, childDir := range setup.childDirs {
+			err = os.MkdirAll(filepath.Join(srcDir, childDir), 0755)
+			require.NoError(t, err)
+		}
+		for _, childFile := range setup.childFiles {
+			err = os.WriteFile(filepath.Join(srcDir, childFile), []byte("hello\n"), 0644)
+			require.NoError(t, err)
+		}
+	}
+
+	return srcDirs, linkDir
+}
+
+func TestBuildCombinedFileInfo(t *testing.T) {
+	t.Parallel()
+
+	t.Run("two_src_dirs_no_conflict", func(t *testing.T) {
+		t.Parallel()
+
+		srcDirs, linkDir := createPreExistingMulti(
+			t,
+			[]srcSetup{
+				{childDirs: nil, childFiles: []string{"file1.txt"}},
+				{childDirs: nil, childFiles: []string{"file2.txt"}},
+			},
+			nil, nil,
+		)
+
+		actualFileInfo, err := buildCombinedFileInfo(srcDirs, linkDir, nil, false)
+		require.NoError(t, err)
+
+		expected := &fileInfo{
+			dirLinksToCreate:  nil,
+			existingDirLinks:  nil,
+			existingFileLinks: nil,
+			fileLinksToCreate: []linkT{
+				{src: filepath.Join(srcDirs[0], "file1.txt"), link: filepath.Join(linkDir, "file1.txt")},
+				{src: filepath.Join(srcDirs[1], "file2.txt"), link: filepath.Join(linkDir, "file2.txt")},
+			},
+			ignoredPaths: nil,
+			pathErrs:     nil,
+			pathsErrs:    nil,
+		}
+		require.Equal(t, expected, actualFileInfo)
+	})
+
+	t.Run("two_src_dirs_file_conflict", func(t *testing.T) {
+		t.Parallel()
+
+		srcDirs, linkDir := createPreExistingMulti(
+			t,
+			[]srcSetup{
+				{childDirs: nil, childFiles: []string{"conflict.txt", "unique1.txt"}},
+				{childDirs: nil, childFiles: []string{"conflict.txt", "unique2.txt"}},
+			},
+			nil, nil,
+		)
+
+		actualFileInfo, err := buildCombinedFileInfo(srcDirs, linkDir, nil, false)
+		require.NoError(t, err)
+
+		linkPath := filepath.Join(linkDir, "conflict.txt")
+		expected := &fileInfo{
+			dirLinksToCreate:  nil,
+			existingDirLinks:  nil,
+			existingFileLinks: nil,
+			fileLinksToCreate: []linkT{
+				{src: filepath.Join(srcDirs[0], "unique1.txt"), link: filepath.Join(linkDir, "unique1.txt")},
+				{src: filepath.Join(srcDirs[1], "unique2.txt"), link: filepath.Join(linkDir, "unique2.txt")},
+			},
+			ignoredPaths: nil,
+			pathErrs:     nil,
+			pathsErrs: []pathsErr{
+				{
+					src:  filepath.Join(srcDirs[0], "conflict.txt"),
+					link: linkPath,
+					err:  errors.New("link path conflict between src dirs"),
+				},
+				{
+					src:  filepath.Join(srcDirs[1], "conflict.txt"),
+					link: linkPath,
+					err:  errors.New("link path conflict between src dirs"),
+				},
+			},
+		}
+		require.Equal(t, expected, actualFileInfo)
+	})
+
+	t.Run("two_src_dirs_dir_conflict", func(t *testing.T) {
+		t.Parallel()
+
+		srcDirs, linkDir := createPreExistingMulti(
+			t,
+			[]srcSetup{
+				{childDirs: []string{"mydir"}, childFiles: []string{"mydir/file.txt"}},
+				{childDirs: []string{"mydir"}, childFiles: []string{"mydir/other.txt"}},
+			},
+			nil, nil,
+		)
+
+		actualFileInfo, err := buildCombinedFileInfo(srcDirs, linkDir, nil, false)
+		require.NoError(t, err)
+
+		linkPath := filepath.Join(linkDir, "mydir")
+		expected := &fileInfo{
+			dirLinksToCreate:  nil,
+			existingDirLinks:  nil,
+			existingFileLinks: nil,
+			fileLinksToCreate: nil,
+			ignoredPaths:      nil,
+			pathErrs:          nil,
+			pathsErrs: []pathsErr{
+				{
+					src:  filepath.Join(srcDirs[0], "mydir"),
+					link: linkPath,
+					err:  errors.New("link path conflict between src dirs"),
+				},
+				{
+					src:  filepath.Join(srcDirs[1], "mydir"),
+					link: linkPath,
+					err:  errors.New("link path conflict between src dirs"),
+				},
+			},
+		}
+		require.Equal(t, expected, actualFileInfo)
+	})
 }

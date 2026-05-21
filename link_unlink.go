@@ -412,7 +412,95 @@ func buildFileInfo(srcDir string, linkDir string, ignorePatterns []string, isDot
 
 }
 
-// askPrompt looks at the ask string and decides whether to continue
+// buildCombinedFileInfo runs buildFileInfo for each srcDir and merges the results.
+// It detects link path conflicts between src dirs — where two different src dirs would
+// produce the same link path — and records them as pathsErrs rather than adding them
+// to the links-to-create lists. All other errors from individual src dirs are also merged.
+func buildCombinedFileInfo(srcDirs []string, linkDir string, ignorePatterns []string, isDotfiles bool) (*fileInfo, error) {
+	combined := &fileInfo{
+		dirLinksToCreate:  nil,
+		existingDirLinks:  nil,
+		existingFileLinks: nil,
+		fileLinksToCreate: nil,
+		ignoredPaths:      nil,
+		pathErrs:          nil,
+		pathsErrs:         nil,
+	}
+
+	// linkPath -> []linkT for all "to create" items, for cross-src-dir conflict detection
+	allLinksToCreate := make(map[string][]linkT)
+	isDirLink := make(map[string]bool)
+
+	for _, srcDir := range srcDirs {
+		fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
+		if err != nil {
+			return nil, err
+		}
+
+		combined.ignoredPaths = append(combined.ignoredPaths, fi.ignoredPaths...)
+		combined.pathErrs = append(combined.pathErrs, fi.pathErrs...)
+		combined.pathsErrs = append(combined.pathsErrs, fi.pathsErrs...)
+		combined.existingDirLinks = append(combined.existingDirLinks, fi.existingDirLinks...)
+		combined.existingFileLinks = append(combined.existingFileLinks, fi.existingFileLinks...)
+
+		for _, ltc := range fi.dirLinksToCreate {
+			allLinksToCreate[ltc.link] = append(allLinksToCreate[ltc.link], ltc)
+			isDirLink[ltc.link] = true
+		}
+		for _, ltc := range fi.fileLinksToCreate {
+			allLinksToCreate[ltc.link] = append(allLinksToCreate[ltc.link], ltc)
+		}
+	}
+
+	for linkPath, ltcs := range allLinksToCreate {
+		if len(ltcs) > 1 {
+			for _, ltc := range ltcs {
+				combined.pathsErrs = append(combined.pathsErrs, pathsErr{
+					src:  ltc.src,
+					link: ltc.link,
+					err:  errors.New("link path conflict between src dirs"),
+				})
+			}
+		} else {
+			if isDirLink[linkPath] {
+				combined.dirLinksToCreate = append(combined.dirLinksToCreate, ltcs[0])
+			} else {
+				combined.fileLinksToCreate = append(combined.fileLinksToCreate, ltcs[0])
+			}
+		}
+	}
+
+	compareLinks := func(a, b linkT) int {
+		if n := cmp.Compare(a.link, b.link); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.src, b.src)
+	}
+
+	slices.SortFunc(combined.dirLinksToCreate, compareLinks)
+	slices.SortFunc(combined.existingDirLinks, compareLinks)
+	slices.SortFunc(combined.existingFileLinks, compareLinks)
+	slices.SortFunc(combined.fileLinksToCreate, compareLinks)
+	slices.Sort(combined.ignoredPaths)
+	slices.SortFunc(combined.pathErrs, func(a, b pathErr) int {
+		if n := cmp.Compare(a.path, b.path); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.err.Error(), b.err.Error())
+	})
+	slices.SortFunc(combined.pathsErrs, func(a pathsErr, b pathsErr) int {
+		if n := cmp.Compare(a.link, b.link); n != 0 {
+			return n
+		}
+		if n := cmp.Compare(a.src, b.src); n != 0 {
+			return n
+		}
+		return cmp.Compare(a.err.Error(), b.err.Error())
+	})
+
+	return combined, nil
+}
+
 // the bool indicates whether to continue and the err indicates any errors
 func askPrompt(ask string) (bool, error) {
 	switch ask {
@@ -442,7 +530,11 @@ func askPrompt(ask string) (bool, error) {
 func unlink(ctx warg.CmdContext) error {
 	ask := ctx.Flags["--ask"].(string)
 	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
-	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
+	srcDirPaths := ctx.Flags["--src-dir"].([]path.Path)
+	srcDirs := make([]string, len(srcDirPaths))
+	for i, p := range srcDirPaths {
+		srcDirs[i] = p.MustExpand()
+	}
 	isDotfiles := ctx.Flags["--dotfiles"].(bool)
 	ignorePatterns := []string{}
 	if ignoreF, exists := ctx.Flags["--ignore"]; exists {
@@ -454,7 +546,7 @@ func unlink(ctx warg.CmdContext) error {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
 
-	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
+	fi, err := buildCombinedFileInfo(srcDirs, linkDir, ignorePatterns, isDotfiles)
 	if err != nil {
 		return err
 	}
@@ -512,6 +604,9 @@ func unlink(ctx warg.CmdContext) error {
 		}
 		f.Flush()
 	}
+	if len(fi.pathsErrs) > 0 {
+		return fmt.Errorf("resolve errors above before deleting links")
+	}
 	if len(fi.existingFileLinks) == 0 && len(fi.existingDirLinks) == 0 {
 		fmt.Print(
 			color.Add(
@@ -565,7 +660,11 @@ func unlink(ctx warg.CmdContext) error {
 func link(ctx warg.CmdContext) error {
 	ask := ctx.Flags["--ask"].(string)
 	linkDir := ctx.Flags["--link-dir"].(path.Path).MustExpand()
-	srcDir := ctx.Flags["--src-dir"].(path.Path).MustExpand()
+	srcDirPaths := ctx.Flags["--src-dir"].([]path.Path)
+	srcDirs := make([]string, len(srcDirPaths))
+	for i, p := range srcDirPaths {
+		srcDirs[i] = p.MustExpand()
+	}
 	isDotfiles := ctx.Flags["--dotfiles"].(bool)
 	ignorePatterns := []string{}
 	if ignoreF, exists := ctx.Flags["--ignore"]; exists {
@@ -577,7 +676,7 @@ func link(ctx warg.CmdContext) error {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
 
-	fi, err := buildFileInfo(srcDir, linkDir, ignorePatterns, isDotfiles)
+	fi, err := buildCombinedFileInfo(srcDirs, linkDir, ignorePatterns, isDotfiles)
 	if err != nil {
 		return err
 	}
@@ -633,6 +732,10 @@ func link(ctx warg.CmdContext) error {
 			fmt.Fprintln(f)
 		}
 		f.Flush()
+	}
+
+	if len(fi.pathsErrs) > 0 {
+		return fmt.Errorf("resolve errors above before creating links")
 	}
 
 	if len(fi.fileLinksToCreate) == 0 && len(fi.dirLinksToCreate) == 0 {

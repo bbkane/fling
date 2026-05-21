@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+Note the the latest version may be unreleased.
+
+# v0.0.23
+
+## Added
+
+- `--src-dir` (`-s`) now accepts multiple values. Pass `-s` multiple times to symlink from several source directories at once (e.g., `fling link -s ~/dotfiles/nvim -s ~/dotfiles/tmux`). Conflicts between source directories are detected and reported before any links are created or deleted.
+
 # v0.0.22
 
 ## Added
