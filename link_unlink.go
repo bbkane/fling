@@ -541,7 +541,8 @@ func unlink(ctx warg.CmdContext) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := warg.ConditionallyEnableColor(ctx.Flags, os.Stdout)
+	color, err := gocolor.Prepare(warg.ColorEnabled(ctx.Flags, ctx.Stdout))
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}
@@ -671,7 +672,7 @@ func link(ctx warg.CmdContext) error {
 		ignorePatterns = ignoreF.([]string)
 	}
 
-	color, err := warg.ConditionallyEnableColor(ctx.Flags, os.Stdout)
+	color, err := gocolor.Prepare(warg.ColorEnabled(ctx.Flags, ctx.Stdout))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error enabling color. Continuing without: %v\n", err)
 	}

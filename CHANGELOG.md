@@ -11,6 +11,10 @@ Note the the latest version may be unreleased.
 
 - `--src-dir` (`-s`) now accepts multiple values. Pass `-s` multiple times to symlink from several source directories at once (e.g., `fling link -s ~/dotfiles/nvim -s ~/dotfiles/tmux`). Conflicts between source directories are detected and reported before any links are created or deleted.
 
+## Changed
+
+- Updated warg to v0.40.2, adding bash/fish completion and changes to default command help output
+
 # v0.0.22
 
 ## Added
