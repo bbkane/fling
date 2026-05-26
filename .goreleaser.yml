@@ -18,7 +18,7 @@ brews:
     homepage: https://github.com/bbkane/fling
     install: |
       bin.install "fling"
-      generate_completions_from_executable(bin/"fling", "completion", shells: [:zsh])
+      generate_completions_from_executable(bin/"fling", "completion", shells: [:bash, :fish, :zsh])
     repository:
       name: homebrew-tap
       owner: bbkane
