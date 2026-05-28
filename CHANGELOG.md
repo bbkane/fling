@@ -5,7 +5,9 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note the the latest version may be unreleased.
 
-# v0.0.24
+# v0.0.24 / v0.0.25
+
+Arghh I forgot to actually comment out the value before I committed
 
 ## Removed
 
