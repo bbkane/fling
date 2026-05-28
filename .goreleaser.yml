@@ -29,7 +29,7 @@ builds:
       - CGO_ENABLED=0
     goarch:
       - amd64
-      - arm  # linux_arm_6 doesn't support math.MaxUint32 (overflows int) (needed by warg). TODO: fix this in warg instead of breaking fling like this
+      # - arm  # linux_arm_6 doesn't support math.MaxUint32 (overflows int) (needed by warg). TODO: fix this in warg instead of breaking fling like this
       - arm64
       # - i386  # does anyone care about i386?
     goos:
