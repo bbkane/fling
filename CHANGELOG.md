@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Note the the latest version may be unreleased.
 
+# v0.0.24
+
+## Removed
+
+- `arm` binary support (since warg doesn't support it. See https://github.com/bbkane/fling/pull/3
+
 # v0.0.23
 
 ## Added
