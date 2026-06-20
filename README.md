@@ -14,7 +14,7 @@ Basically complete! I use `fling` for my dotfiles, which seems to work great; an
 
 ## Install
 
-- [Homebrew](https://brew.sh/): `brew install bbkane/tap/fling`
+- [Homebrew](https://brew.sh/): `brew install --cask bbkane/tap/fling`
 - [Scoop](https://scoop.sh/):
 
 ```
